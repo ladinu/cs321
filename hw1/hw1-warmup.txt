@@ -1,0 +1,123 @@
+------------------------------------------------------------------------
+CS 321 Languages and Compiler Design I, Winter 2014
+
+Assignment 1: "Warmup"
+------------------------------------------------------------------------
+
+Preamble:
+---------
+Due: 1pm, Thursday January 16, 2014, via D2L.  If you prefer to
+submit your solution on paper instead, you are welcome to do so by
+delivering it in person to Mark Jones (in class, office hours, or
+by leaving it in his mailbox/under his office door) by the same
+deadline.
+
+[Note: This assignment requires the use of the mini implementation
+from the Week 1 Lab session, and is intended to be attempted after
+you have completed that lab.]
+
+This assignment will be graded out of 50 points following the
+distribution described below.  Even a perfect score, however, will
+only contribute a maximum of 5% towards your final grade.  The
+minimum passing grade (i.e., to avoid an F or an X grade) is 10
+points.
+
+Your solution to this assignment should be submitted as a single
+written document that should be clearly labeled with your name at
+the start of the text/document.  (For those submitting
+electronically, either plain text or pdf formats are acceptable).
+Be sure to include appropriate justification and explanation;
+stating the final answer alone may not earn full marks.
+
+Please ask for help or clarification if you need it.
+
+Note that this is not strictly a "programming assignment", although
+you are very welcome to write or use programs in the process of
+constructing your answers.
+
+------------------------------------------------------------------------
+
+Part 1: [30 points]
+-------
+Your first task is to construct the raw material for a sequence of
+"slides" to illustrate the results of passing a simple program,
+written in the "mini" programming language from the first lab,
+through each of the main phases of the compiler.  You have already
+seen one attempt to do this in the instructor's slides for the first
+lecture.  But for this exercise, you should start by writing a new
+"mini" program, and then following it's path through the mini
+compiler pipeline.  As further guidance:
+
+- The mini program that you start with should be different (in
+  non-trivial ways!) from the mini programs that have been shown
+  in labs and lectures, and should incorporate a number of different
+  features of the mini language.  (You may wish to consult the
+  grammar for mini, given on Page 3 of the minitour/Lab 1 handout,
+  for some hints about features of mini that were not shown in the
+  lab or lecture examples.)
+
+- Your first "slide" should show the initial source program that you
+  have chosen, commenting on any particular features of the mini
+  language that you have decided to focus on.  Your final "slide"
+  should show the target code output that you would expect to be
+  produced by running your initial source code through Version 21 of
+  the compiler.  You are welcome, however, to use other,
+  intermediate versions of the mini compiler to help you prepare
+  your full set of "slides".
+
+- You are also strongly encouraged to annotate each of your "slides"
+  with comments that highlight interesting or noteworthy features or
+  changes at each step of the compilation process.
+
+- You should only include "slides" for the main compiler phases.
+  (For example, you do not need to produce separate "slides" for
+  each of the different static analysis phases.)
+
+Note that you are definitely NOT expected or required to prepare
+actual slides, for example using presentation software such as
+PowerPoint.  Your goal is just to show that you can explain how a
+"mini" program of your own design is transformed as it passes
+through each of the main phases of a typical compiler.  As such, it
+would be fine to answer the question with a plain text document or
+even just a small collection of handwritten sketches that illustrate
+the effects of each compiler phase.
+
+If this description leaves you with any doubts about what is
+expected, please ask for clarification!  All that said, we hope that
+you will have some fun and demonstrate some creativity and insight
+in selecting an appropriate example program and in describing its
+passage through the compiler pipeline!
+
+
+Part 2: [20 points]
+-------
+Carefully explaining the methods that you use, your second task is
+to analyze the code for the mini compiler pipeline that was
+provided for the Lab 1 materials.  As a result of this analysis,
+you should present some summary statistics that characterize the
+amount of code that is required by each of the main compiler
+phases.  As a first hint, you should note that the total number of
+"lines of code" in a program is often used as way to characterize
+program size.  This is an appealing choice here because it does
+not require deep inspection of the code, and because it is usually
+easy to compute the number of lines in any give text file or group
+of text files using a utility like "wc".  (If you are not familiar
+with "wc", try typing "man wc" at the Unix prompt, or ask an
+instructor or TA for help).  As a second hint, you might also note
+that each of the different versions of the mini compiler in the
+Lab 1 materials includes essentially all of the code from the
+previous versions, together with whatever new code is necessary to
+add the extra functionality for that particular version.
+
+The purpose of this exercise is for you to develop some sense of
+what proportions of the overall code base are taken up by each of
+the individual compiler phases.  Once you have completed this
+exercise for the supplied mini compiler, you should conclude by
+speculating on what you might expect to find if this same
+experiment were to be repeated on a more realistic,
+industrial-strength compiler.  (Note that there is no single
+correct answer to this last part of the assignment; as such any
+sound, carefully explained, and plausible speculation/argument
+will receive credit).
+
+------------------------------------------------------------------------

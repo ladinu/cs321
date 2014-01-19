@@ -1,0 +1,259 @@
+// Name: Ladinu Chandrasinghe
+// Assignment 1: "Warmup"
+// CS 321 Languages and Compiler Design I, Winter 2014
+
+
+PART I
+=========================================
+
+[ Source Input ]
+
+      // Calculate 10 fac
+      int m, n;
+
+      m = 1;
+      n = 10;
+
+      while ( n > 0 ) {
+         m = m * n;
+         n = n - 1;
+      }
+
+      print m;
+
+- The above source program (named fac.mini) calculate the factorial of number
+  10. Because mini doesn't appear to have built in functions, the program
+  calculate the factorial iteratively. Hence the `while` loop is the main focus
+  of this program.
+
+- There are two variables `m` and `n`. Variable `n` is decremented by 1 on 
+  each pass of the `while` loop. On each pass, `m` is multiplied by `n` and 
+  result stored in `m`. When `n` reach 0, `m` is printed
+
+-------------------------------------------------------------------------------
+
+
+
+[ Lexical Analysis]
+
+- Running fac.mini through the lexer gives us the following tokens and the
+  location of the tokens in the source text file
+
+      (1, 2)	  13	int keyword
+      (5, 2)	  1	identifier, m
+      (6, 2)	  44	comma
+      (8, 2)	  1	identifier, n
+      (9, 2)	  59	semicolon
+      (1, 4)	  1	identifier, m
+      (3, 4)	  61	= operator
+      (5, 4)	  2	integer literal, 1
+      (6, 4)	  59	semicolon
+      (1, 5)	  1	identifier, n
+      (3, 5)	  61	= operator
+      (5, 5)	  2	integer literal, 10
+      (7, 5)	  59	semicolon
+      (1, 7)	  11	while keyword
+      (7, 7)	  40	open parenthesis
+      (9, 7)	  1	identifier, n
+      (11, 7)	  62	> operator
+      (13, 7)	  2	integer literal, 0
+      (15, 7)	  41	close parenthesis
+      (17, 7)	  123	open brace
+      (4, 8)	  1	identifier, m
+      (6, 8)	  61	= operator
+      (8, 8)	  1	identifier, m
+      (10, 8)	  42	* operator
+      (12, 8)	  1	identifier, n
+      (13, 8)	  59	semicolon
+      (4, 9)	  1	identifier, n
+      (6, 9)	  61	= operator
+      (8, 9)	  1	identifier, n
+      (10, 9)	  45	- operator
+      (12, 9)	  2	integer literal, 1
+      (13, 9)	  59	semicolon
+      (1, 10)	  125	close brace
+      (1, 12)	  12	print keyword
+      (7, 12)	  1	identifier, m
+      (8, 12)	  59	semicolon
+
+- The location of each token in the original source file is calculated because
+  this information is used to generate error messages. 
+-------------------------------------------------------------------------------
+
+
+
+[ Parser ]
+
+- The following Abstract Syntax Tree (AST) is generated using the tokens from
+  the tokenizer
+
+      Block
+        VarDecl
+          int
+          Id("m")
+          Id("n")
+        Assign
+          Id("m")
+          IntLit(1)
+        Assign
+          Id("n")
+          IntLit(10)
+        While
+          Gt
+            Id("n")
+            IntLit(0)
+          Block
+            Assign
+              Id("m")
+              Mul
+                Id("m")
+                Id("n")
+            Assign
+              Id("n")
+              Sub
+                Id("n")
+                IntLit(1)
+        Print
+          Id("m")
+
+- Syntax errors will be caught during this stage and errors will be
+  generated using the information given from the tokens
+
+-------------------------------------------------------------------------------
+
+
+
+[ Semantic Analysis ]
+
+- During the semantic analysis phase, the AST is used to derive certain
+  conclusions about the meaning of the source program. In this phase, several
+  things are preformed. These include type checking, initialization analysis,
+  and scope analysis
+
+- If errors exist in the original source program such as invalid types
+  semantic analysis will throw error messages. These messages utilize the token
+  location information gathered in the lexical analysis phase.
+
+- Although optimization occur later in the pipeline, mini also implement
+  simplification of arithmetic expressions in this stage. For example if line 5
+  of source program was `n = (1 + 9)` it will be simplified into `n = 10`
+
+-------------------------------------------------------------------------------
+
+
+
+[ Code Generation ]
+
+          .file	"../../mini/fac.s"
+          .globl	_Main_main
+      _Main_main:
+          pushl	%ebp
+          movl	%esp,%ebp
+          subl	$8,%esp
+          movl	$1,%eax
+          movl	%eax,-4(%ebp)
+          movl	$10,%eax
+          movl	%eax,-8(%ebp)
+          jmp	l1
+      l0:
+          movl	-8(%ebp),%eax
+          movl	-4(%ebp),%ecx
+          imull	%ecx,%eax
+          movl	%eax,-4(%ebp)
+          movl	$1,%eax
+          movl	-8(%ebp),%ecx
+          xchgl	%ecx,%eax
+          subl	%ecx,%eax
+          movl	%eax,-8(%ebp)
+      l1:
+          movl	$0,%eax
+          movl	-8(%ebp),%ecx
+          cmpl	%eax,%ecx
+          jg	l0
+          subl	$12,%esp
+          movl	-4(%ebp),%eax
+          pushl	%eax
+          call	_print
+          movl	%ebp,%esp
+          popl	%ebp
+          ret
+
+- In this phase, the AST is used to generate assembly code.
+
+[ Optimization ]
+-------------------------------------------------------------------------------
+
+
+PART II
+=========================================
+
+- I ran the tool cloc on directory minitour/21 and all of its sub directories.
+  The following are what the tool produced
+
+ast/
+   http://cloc.sourceforge.net v 1.60  T=0.18 s (297.4 files/s, 25308.8 lines/s)
+   -------------------------------------------------------------------------------
+   Language                     files          blank        comment           code
+   -------------------------------------------------------------------------------
+   Java                            53            574           1948           1988
+   -------------------------------------------------------------------------------
+   SUM:                            53            574           1948           1988
+   -------------------------------------------------------------------------------
+
+compiler/
+   http://cloc.sourceforge.net v 1.60  T=0.05 s (263.1 files/s, 16550.9 lines/s)
+   -------------------------------------------------------------------------------
+   Language                     files          blank        comment           code
+   -------------------------------------------------------------------------------
+   Java                            12             84            277            394
+   -------------------------------------------------------------------------------
+   SUM:                            12             84            277            394
+   -------------------------------------------------------------------------------
+
+lexer/
+   http://cloc.sourceforge.net v 1.60  T=0.02 s (121.2 files/s, 19202.7 lines/s)
+   -------------------------------------------------------------------------------
+   Language                     files          blank        comment           code
+   -------------------------------------------------------------------------------
+   Java                             2             38             37            242
+   -------------------------------------------------------------------------------
+   SUM:                             2             38             37            242
+   -------------------------------------------------------------------------------
+
+parser/
+   http://cloc.sourceforge.net v 1.60  T=0.02 s (64.8 files/s, 28366.1 lines/s)
+   -------------------------------------------------------------------------------
+   Language                     files          blank        comment           code
+   -------------------------------------------------------------------------------
+   Java                             1             59             77            302
+
+21/
+   http://cloc.sourceforge.net v 1.60  T=0.24 s (278.5 files/s, 24654.0 lines/s)
+   -------------------------------------------------------------------------------
+   Language                     files          blank        comment           code
+   -------------------------------------------------------------------------------
+   Java                            68            755           2339           2926
+   -------------------------------------------------------------------------------
+   SUM:                            68            755           2339           2926
+   -------------------------------------------------------------------------------
+
+
+- Here is a summary of the statistics:
+
+     Directory       | Lines of Code     | Percentage
+   ------------------|-------------------|--------------
+     parser          | 302               | 10.3
+     ast             | 1988              | 67.9
+     lexer           | 242               | 8.3
+     compiler/other  | 394               | 13.5
+   ------------------|-------------------|--------------
+     TOTAL:          | 2926              | 100
+
+- It appears that the ast/ directory has most of the code (about 70%). The next
+  highest directory in terms of code is the compiler/ directory. This directory
+  has about 13% of all the code. Closely in third is the parser/ directory which
+  has about 10% of the code. The lexer (surprisingly), has the least amount of
+  code. 
+
+- A conclusion that I can make about 'industrial-strength' compiler is that the
+  most of the work/codebase is dedicated to semantic analysis.

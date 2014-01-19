@@ -1,0 +1,165 @@
+------------------------------------------------------------------------
+CS 321 Languages and Compiler Design I, Winter 2014
+
+Assignment 2: "Lexer"
+------------------------------------------------------------------------
+
+Preamble:
+---------
+Due: noon, Tuesday January 28, 2014, via the D2L dropbox mechanism.
+If you prefer to submit your solution on paper instead, you are
+welcome to do so by delivering it in person to Mark Jones (in office
+hours, or by leaving it in his mailbox/under his office door) by
+the same deadline.
+
+[Note: This assignment requires the use of the lexertour materials
+from the Week 2 Lab session, and is intended to be attempted after
+you have completed that lab.]
+
+This assignment will be graded out of 55 points following the
+distribution described below.  Even a perfect score, however, will
+only contribute a maximum of 10% towards your final grade.  The
+minimum passing grade (i.e., to avoid an F or an X grade) is 15
+points.
+
+Your solution to this assignment should be submitted as a single
+written document that should be clearly labeled with your name at
+the start of the text/document.  (For those submitting
+electronically, either plain text or pdf formats are acceptable).
+Be sure to include appropriate justification and explanation;
+stating the final answer alone may not earn full marks.
+
+Please ask for help or clarification if you need it.
+
+------------------------------------------------------------------------
+
+Question 1: Regular Expression Warmup [15 points]
+-------------------------------------
+[Note: For the purposes of this question, we are only interested in the
+very simple set of regular expressions that can be constructed from
+combinations of single characters, sequences, alternatives and
+repetitions.  This is the same as the language of regular expressions
+that is described on Page 1 of regexptour.pdf in the Lab 2 materials,
+but without the Empty construct.  You are welcome (but not required) to
+use regexp.RegExpTest or other tools to help you to answer these
+questions, and to provide evidence for the correctness of your answers.]
+
+In this question, when we refer to "the number of characters" in a
+regular expression, we will only include the single character symbols
+that it includes, and not any of the *, |, (, or ) symbols that might
+also be present.  Thus:
+
+  ab    a|b     (a(b*)*)   and  a****|b
+
+should all be considered as containing 2 characters (the "a" and the "b"
+symbols in each case), even though most of them include additional
+symbols to make up a complete regular expression.  Note that the number
+of times each character appears should also be accounted for, so each of
+the following regular expressions also should be considered as containing
+precisely 2 characters:
+
+  aa    a|a     (a(a*)*)   and  a****|a
+
+
+i) For any integer n>=1, explain how you can construct a regular
+expression that contains precisely n characters and produces a DFA with
+exactly n states, ONLY ONE of which is an accept state.
+
+ii) For any integer n>=1, explain how you can construct a regular
+expression that contains precisely n characters and produces a DFA with
+exactly n states, ALL of which are accept states.
+
+iii) For any integer n>=1, explain how you can construct a regular
+expression that contains precisely n characters but produces a DFA with
+only one state.
+
+iv) For any integer n>=1, explain how you can construct a regular
+expression r whose abstract syntax tree contains n nodes, but for which
+the generated DFA has only one state.
+
+v) Give a regular expression that contains at most 4 characters but
+produces a DFA with at least 7 states.
+
+
+Question 2: A Science Experiment  [10 points]
+--------------------------------
+A scientist runs an advanced experiment, monitored by a computer
+system that outputs a one line text summary of numeric data about the
+status of the experiment every second until it completes.
+Unfortunately, the experiment is very sensitive, and if conditions are
+not just right, then the experiment must be aborted.  Even worse, it
+usually takes several thousand attempts before a succesful run of the
+experiment can be completed.  To handle situations like this, the
+scientist has programmed the computer to recognize when the experiment
+must be aborted.  When this occurs, the computer prints the word
+"ABORT" on a line by itself and then automatically restarts the
+experiment.  This allows the scientist to leave the experiment running
+over a weekend, for example, and have reasonable confidence that there
+will have been a successful run by the time they long periods---over a
+weekend, for example---but have reasonable expectations that there
+will have been a successful run by the end of the weekend.
+
+The scientist arranges for the output from the computer to be captured
+in a text file.  But, of course, only the data about the final,
+successful experiment at the end of the file is of any interest.  To
+address this, the scientist constructs the following jflex program to
+process the contents of the text file:
+
+  %%
+
+  %class Trim
+  %standalone
+
+  %%
+
+  (.|\n)*ABORT\n      { /* ignore */ }
+
+The intention here is that the generated Java code will match and
+then discard the data for each of the aborted experiment runs one
+at a time until only the data for the final, successful run remains.
+
+Explain why this approach has a potential performance problem, and
+write a new jflex program to show how that problem can be avoided.
+
+
+Question 3: Syntax Uncoloring  [15 points]
+------------------------------
+Folder 10 in the Lab 2 materials contains the jflex source code
+for the MiniColor program that takes programs written in the mini
+programming language and outputs syntax colored versions of the
+same code in HTML format.  Using only the techniques illustrated
+in the Lab 2 examples, construct a jflex program that can perform
+the reverse operation, recovering the original mini source code
+from an HTML file that has been produced by MiniColor.  Include
+a brief summary about the approach that you have used, and be
+sure to include some evidence of the testing you have to done to
+confirm that it works correctly.
+
+
+Question 4: MiniColor Madness  [15 points]
+-----------------------------
+Construct regular expressions that will match:
+
+a) any positive decimal integer literal that is less than or
+   equal to the maximum signed integer that can be represented
+   in 32 bits (i.e., 2147483647).
+
+b) any positive decimal integer that is a multiple of four
+   (hint: for numbers with three or more digits, it is enough
+   to consider the last two digits only).
+
+Using these regular expressions, modify the MiniColor program
+so that it tags any integer literal that is greater than 2147483647
+as being invalid, except in the special cases when then number is
+also a multiple of four, in which case it should be tagged
+using the "literal" class.
+
+[Note: Checking for numbers greater than 2147483647 might be
+useful in practice because that is the largest signed integer
+that can be stored in a 32-bit register.  Excluding multiples
+of four as we've asked you to do here, however, isn't likely
+to be something you'd do in practice: we just want to test
+your ability to use jflex effectively!]
+
+
+------------------------------------------------------------------------

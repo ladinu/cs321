@@ -1,0 +1,12 @@
+// Calculate factorials
+int m, n;
+
+m = 1;
+n = 10;
+
+while ( n > 0 ) {
+   m = m * n;
+   n = n - 1;
+}
+
+print m;
