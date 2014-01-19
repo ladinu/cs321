@@ -1,0 +1,219 @@
+// -----------------------------------------------------------------
+A tour through the main features of jflex, illustrated by a small
+collection of examples.
+
+Typifies the behavior of lexer generator tools in the "lex" family.
+Not intended as a substitute for reading the manual.  Website for
+jflex is www.jflex.de.  Version 1.4.3 is already installed on the
+Linux Lab computers.
+
+Examples are in folders 00, 01, ..., 11, as described below.
+
+// -----------------------------------------------------------------
+// 00 Basic structure of a .jflex file
+//    Text matching rules with empty actions is ignored
+//    Text not matching any rule is copied unchanged to the output
+
+Program removes whitespace, but all other input copied to stdout.
+
+Explain structure of program, punctuated by %%s.
+
+Explain %standalone directive:
+  "Creates a main function in the generated class that expects the
+  name of an input file on the command line and then runs the
+  scanner on this input file. The values returned by the scanner
+  are ignored, but any unmatched text is printed to the Java
+  console instead (as the C/C++ tool flex does, if run as
+  standalone program).  To avoid having to use an extra token
+  class, the scanning method will be declared as having default
+  type int, not YYtoken"
+
+Explain Yylex name.
+
+Compile using:
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex test.mini
+
+// -----------------------------------------------------------------
+// 01 More of the same:
+
+Deletes \r characters in the input file.  (For example, building a
+Windows/DOS -> Unix text file converter.)
+
+Compile and demonstrate using:
+ jflex Example.jflex 
+ javac Yylex.java
+ od -c test.mini 
+ java Yylex test.mini | od -c
+
+(od is the "octal dump" utility; "-c" specifies character dump.)
+
+// -----------------------------------------------------------------
+// 02 Output produced by an action replaces original input
+
+Attempts to rename variables i and t in the file to count and
+total, respectively.  Fails because it matches any occurrences.
+
+Compile using
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex test.mini
+
+// -----------------------------------------------------------------
+// 03 Longest lexeme wins
+
+Fixes the problem in previous example by adding a rule that matches
+longer words:     [a-z]+   { System.out.print(yytext()); }
+
+Compile and demo as before.  Discuss longest lexeme/maximal munch,
+possibly touching on how matching process tracks "last accept".
+
+// -----------------------------------------------------------------
+// 04 If two rules match the same input, choose the earliest rule
+
+A variant of the previous example that puts the new rule at the
+front of the list, preventing the original translations from
+being used.  (Note that jflex will warn about this.)
+
+Compile and demo as before.
+
+// -----------------------------------------------------------------
+// 05 There is no need for actions to produce output
+
+A simple line and character counting program.
+
+Discuss %{ ... %} and %eof{ ... %eof}  (and maybe mention %init{
+and %init} too, which will be used later in 10.)
+
+Explain that . matches any character (except \n).  (Will return to
+the decision to exclude \n later.)
+
+Compile and demo using:
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex test.mini
+ wc -lc test.mini
+
+// -----------------------------------------------------------------
+// 06 There is no need for actions to produce output
+
+Another utility that cuts out text between BEGIN and END brackets,
+anchored to the start of a line.  (A custom utility that I needed
+once upon a time to cut "proof scripts" out of a large transcript.)
+
+Look at the "sample" file, then compile and demo using:
+
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex sample
+
+// -----------------------------------------------------------------
+// 07 A period doesn't match newlines (Part 1)
+
+Uses the regexp . in place of .|\n for the last rule.  What goes
+wrong?  (Might need to modify the sample file to see that the newlines
+between BEGIN and END are still being displayed.)
+
+Compile and demo using:
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex sample
+
+To view the files side by side, try:
+  java Yylex sample | pr -mt - sample 
+
+// -----------------------------------------------------------------
+// 08 A period doesn't match newlines (Part 2)
+
+Compile and demo using:
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex test.mini
+
+Note: does not match the first newline, just the comment text.
+
+Replace regular expression with: "//"(.|\n)*
+Recompile, and demo, noting the extent of the truly maximal munch.
+
+// -----------------------------------------------------------------
+// 09 Files can introduce useful abbreviations
+
+Adds some definitions:
+
+Identifier         = [:jletter:] [:jletterdigit:]*
+
+LineTerminator     = \r|\n|\r\n
+WhiteSpace         = {LineTerminator} | [ \t\f] 
+InputCharacter     = [^\r\n]
+
+Comment            = {TraditionalComment} | {EndOfLineComment}
+TraditionalComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+EndOfLineComment   = "//" {InputCharacter}* {LineTerminator}
+
+Keyword            = "if" | "else" | "while" | "print" | "int" | "boolean"
+
+Comment on :jletter: and :jletterdigit: builtin character classes.
+
+Comment on lack of recursion, and {Name} syntax for referring previously
+defined names.
+
+Maybe discuss the [^*] (any char except *) and ~a (upto) syntax.
+
+Comment on use of yytext() and the call to toUpperCase().
+
+Compile and demo using:
+ jflex Example.jflex 
+ javac Yylex.java
+ java Yylex test.mini
+
+// -----------------------------------------------------------------
+// 10 jflex can be used to build useful utilities!
+
+A syntax coloring program for the mini programming language,
+generating HTML output.
+
+Walk through (heavily commented) code, pointing out key features.
+
+Compile and demo using:
+ jflex MiniColor.jflex 
+ javac MiniColor.java
+ java MiniColor test.mini > test.html
+
+Open test.html in a browser.  Peek at html if desired.
+
+Consider modifying the code to add a new style for identifiers,
+updating actions, and recompiling.
+
+// -----------------------------------------------------------------
+// 11 jflex can be used to build lexers!
+
+Comparable to minitour, version 06.
+
+A lexer for mini language in mini/Mini.jflex; the only example in
+this collection that doesn't use %standalone.
+
+Walk through declarations, peek at Compiler.java, compile and
+run using:
+ jflex mini/Mini.jflex 
+ javac Compiler.java 
+ java Compiler test
+
+If you haven't done it already, pause to comment on output from jflex
+(number of states, minimization, etc.).  Take a look at the old
+handwritten lexer (not used, but preserved in lexer/MiniLexer.java).
+Take a look at the jflex-generated lexer in mini; observe how
+fragments of the jflex source are spliced together with (largely
+incomprehensible) chunks of generated code and data tables.
+
+Reflect on handwritten vs. machine generated.  Mildly controversial.
+Issues include:
+- How efficient is the generated code?
+- How easy is it to maintain?
+- How good are the error messages?
+- How easily does it interface to other code?
+- How natural is the input? (If the language you are compiling has
+  some awkward features, the lexers produced by a tool might need
+  some massaging to “do the right thing”)
+
+// -----------------------------------------------------------------

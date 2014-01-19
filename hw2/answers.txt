@@ -1,0 +1,46 @@
+Question 1: Regular Expression Warmup [15 points]
+-------------------------------------------------
+
+i) Suppose you have a regular expression that contain n characters
+   concatinated (see following table).
+   
+      n     |   RegExp
+      ------|---------------
+         1  |  "c"
+         2  |  "cc"
+         3  |  "ccc"
+         4  |  "ccc"
+         .  |
+         .  |
+         .  |
+
+   This would generate a DFA with n+1 states. In this DFA, there would be a
+   state for every character and an accept state for the last character. To
+   eliminate the +1 in n+1, one can modify the regular expression so that last
+   character is optional. For example, "ccc*" (see table).
+
+      n     |   RegExp  | number of states in DFA
+      ------|-----------|------------------------
+         1  |  "c*"     |  1
+         2  |  "cc*"    |  2
+         3  |  "ccc*"   |  3
+         4  |  "ccc*"   |  4
+         .  |           |  .
+         .  |           |  .
+         .  |           |  .
+
+   Now there are n-1 states for each character and because last character is
+   preceded with a "*", you have a transition from start state to accept state
+   eliminating the need for an extra state.
+
+ii) (c|%)(c|%)*
+
+iii) (c|c|c|c)*
+
+iv) (c)*, (c*)*, ((c*)*)*, ...
+
+v) 
+
+
+Question 4: MiniColor Madness  [15 points]
+------------------------------------------

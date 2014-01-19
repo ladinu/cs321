@@ -1,0 +1,8 @@
+digraph AST {
+node [shape=box style=filled fontname=Courier];
+0[label="Seq"];
+0 -> 1;
+1[label="c"];
+0 -> 2;
+2[label="c"];
+}

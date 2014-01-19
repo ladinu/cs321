@@ -1,0 +1,25 @@
+Here is a statement.
+
+BEGIN
+  here are some justifying remarks
+  .
+  .
+  .
+  .
+  .
+END
+
+Here is another statement.
+
+BEGIN
+  and some more remarks
+  spread over multiple
+  lines this time.
+  .
+  .
+  .
+  .
+  .
+END
+
+That's all folks!

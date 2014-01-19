@@ -1,0 +1,12 @@
+digraph Automaton {
+graph[rankdir=LR];
+node [fontname=Courier];
+edge [fontname=Courier];
+start[style=invis];
+start -> 0;
+0[label="0", shape=circle];
+0 -> 1[label="c"];
+1[label="1", shape=circle];
+1 -> 2[label="c"];
+2[label="2", shape=doublecircle];
+}
