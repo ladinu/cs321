@@ -1,4 +1,6 @@
 // A simple test
+// <span></span>;
+int <span> = 4;
 int i, t;
 i = 0;
 t = 0;

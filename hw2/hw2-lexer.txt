@@ -73,7 +73,7 @@ iii) For any integer n>=1, explain how you can construct a regular
 expression that contains precisely n characters but produces a DFA with
 only one state.
 
-iv) For any integer n>=1, explain how you can construct a regular
+iv) For any integer n>1, explain how you can construct a regular
 expression r whose abstract syntax tree contains n nodes, but for which
 the generated DFA has only one state.
 

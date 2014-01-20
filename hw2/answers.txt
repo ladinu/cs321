@@ -44,3 +44,14 @@ v)
 
 Question 4: MiniColor Madness  [15 points]
 ------------------------------------------
+- The potential perforamnce problem with the given jflex program is that it
+  starts at the top of the file and tries to match the given pattern
+  "(.|\n)*ABORT\n". This can be expensive if the file is large and contain many
+  failures which are marked as "ABORT".
+
+- Assuming nothing (other than data) is written to the file when a sucessful
+  run is completed, more eficent program would start looking at the file from
+  the bottom and continue up untill it sees a "ABORT" flag. Now everything below
+  this flag can be presented and aeverything above ignored.
+
+- The following is a jflex program that solves this problem:
