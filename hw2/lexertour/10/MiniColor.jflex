@@ -58,7 +58,9 @@
   System.out.println("  .comment {color:orange}");
   System.out.println("  .literal {color:green}");
   System.out.println("  .invalid {color:red}");
+  System.out.println("  .multiple {font-weight: bold}");
   System.out.println("</style>");
+  System.out.println("<script type=\"text/javascript\">window.onload = function(){setInterval(function(){location.reload()}, 3000);}</script>");
   System.out.println("</head>");
   System.out.println("<body>");
 %init}
@@ -134,6 +136,7 @@
   void keyword()     { tag("keyword"); }
   void comment()     { tag("comment"); }
   void literal()     { tag("literal"); }
+  void multiple4()   { tag("multiple"); }
   void invalid_lit() { tag("invalid"); }
   void invalid()     { tag("invalid"); }
 %}
@@ -158,8 +161,8 @@ EndOfLineComment   = "//" {InputCharacter}* {LineTerminator}
 // to generate the appropriate output in each case.  As such, this puts us
 // into the last section of our jflex input file:
 
-posD = [1-9]
-d    = [0-9]
+posD             = [1-9]
+d                = [0-9]
 
 tens             = {posD}{d}
 hundreds         = {posD}{d}{d}
@@ -170,43 +173,61 @@ million          = {posD}{d}{d}{d}{d}{d}{d}
 tenMillion       = {posD}{d}{d}{d}{d}{d}{d}{d}
 hundredMillion   = {posD}{d}{d}{d}{d}{d}{d}{d}{d}
 
-match0  = 1{d}{d}{d}{d}{d}{d}{d}{d}{d}
-match1  = 2[0-0]{d}{d}{d}{d}{d}{d}{d}{d}
-match2  = 21[0-3]{d}{d}{d}{d}{d}{d}{d}
-match3  = 214[0-6]{d}{d}{d}{d}{d}{d}
-match4  = 2147[0-3]{d}{d}{d}{d}{d}
-match5  = 21474[0-7]{d}{d}{d}{d}
-match6  = 214748[0-2]{d}{d}{d}
-match7  = 2147483[0-5]{d}{d}
-match8  = 21474836[0-3]{d}
-match9  = 214748364[0-6]
-match10 = 2147483647
+match0           = 1{d}{d}{d}{d}{d}{d}{d}{d}{d}
+match1           = 2[0-0]{d}{d}{d}{d}{d}{d}{d}{d}
+match2           = 21[0-3]{d}{d}{d}{d}{d}{d}{d}
+match3           = 214[0-6]{d}{d}{d}{d}{d}{d}
+match4           = 2147[0-3]{d}{d}{d}{d}{d}
+match5           = 21474[0-7]{d}{d}{d}{d}
+match6           = 214748[0-2]{d}{d}{d}
+match7           = 2147483[0-5]{d}{d}
+match8           = 21474836[0-3]{d}
+match9           = 214748364[0-6]
+match10          = 2147483647
 
 
-literal = {posD}           | {tens}             | {hundreds} | {thousands}  |
-          {tenThousands}   | {hundredThousands} | {million}  | {tenMillion} |
-          {hundredMillion} | {match0}           | {match1}   | {match2}     |
-          {match3}         | {match4}           | {match5}   | {match6}     |
-          {match7}         | {match8}           | {match9}   | {match10}
+invalid_lit_0    = 0
+invalid_lit_1    = 214748364[8-9]
+invalid_lit_2    = 21474836[5-9]{d}
+invalid_lit_3    = 2147483[7-9]{d}{d}
+invalid_lit_4    = 214748[4-9]{d}{d}{d}
+invalid_lit_5    = 21474[9-9]{d}{d}{d}{d}
+invalid_lit_6    = 2147[5-9]{d}{d}{d}{d}{d}
+invalid_lit_7    = 214[8-9]{d}{d}{d}{d}{d}{d}
+invalid_lit_8    = 21[5-9]{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_9    = 2[2-9]{d}{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_10   = [3-9]{d}{d}{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_11   = {d}{d}{d}{d}{d}{d}{d}{d}{d}{d}*
+
+// RegExps for matching positive ints that are multiples of 4
+// For ints that have 3 or more digits, the last two digit is 
+// goung to be a pattern. This pattern is all the multiples of 4
+// which have 1 or 2 digits i.e {4, 8, 12, 16, 20, 24, ..., 96}
+
+case1          = "12" | "16" | "20" | "24" | "28" | "32" | "36" | 
+                 "40" | "44" | "48" | "52" | "56" | "60" | "64" | 
+                 "68" | "72" | "76" | "80" | "84" | "88" | "92" | 
+                 "96" | "04" | "08"
+
+case2          = "00"
+
+twoDigitMul4   = {case1}|{case2}
+
+multiplesOf_4  = "4" | "8" | {case1} | [1-9][0-9]*{twoDigitMul4}
 
 
-invalid_lit_0  = 0
-invalid_lit_1  = 214748364[8-9]
-invalid_lit_2  = 21474836[5-9]{d}
-invalid_lit_3  = 2147483[7-9]{d}{d}
-invalid_lit_4  = 214748[4-9]{d}{d}{d}
-invalid_lit_5  = 21474[9-9]{d}{d}{d}{d}
-invalid_lit_6  = 2147[5-9]{d}{d}{d}{d}{d}
-invalid_lit_7  = 214[8-9]{d}{d}{d}{d}{d}{d}
-invalid_lit_8  = 21[5-9]{d}{d}{d}{d}{d}{d}{d}
-invalid_lit_9  = 2[2-9]{d}{d}{d}{d}{d}{d}{d}{d}
-invalid_lit_10 = [3-9]{d}{d}{d}{d}{d}{d}{d}{d}{d}
-invalid_lit_11 = {d}{d}{d}{d}{d}{d}{d}{d}{d}{d}+
+// Combine 
+invalid_lit    = {invalid_lit_0} | {invalid_lit_1}  | {invalid_lit_2}  |
+                 {invalid_lit_3} | {invalid_lit_4}  | {invalid_lit_5}  |
+                 {invalid_lit_6} | {invalid_lit_7}  | {invalid_lit_8}  |
+                 {invalid_lit_9} | {invalid_lit_10} | {invalid_lit_11}
 
-invalid_lit = {invalid_lit_0} | {invalid_lit_1}  | {invalid_lit_2}  |
-              {invalid_lit_3} | {invalid_lit_4}  | {invalid_lit_5}  |
-              {invalid_lit_6} | {invalid_lit_7}  | {invalid_lit_8}  |
-              {invalid_lit_9} | {invalid_lit_10} | {invalid_lit_11}
+literal        = {posD}           | {tens}             | {hundreds} | {thousands}  |
+                 {tenThousands}   | {hundredThousands} | {million}  | {tenMillion} |
+                 {hundredMillion} | {match0}           | {match1}   | {match2}     |
+                 {match3}         | {match4}           | {match5}   | {match6}     |
+                 {match7}         | {match8}           | {match9}   | {match10}
+
 %%
 
 // Once again, we can adopt the definitions for mini tokens that were
@@ -228,9 +249,13 @@ invalid_lit = {invalid_lit_0} | {invalid_lit_1}  | {invalid_lit_2}  |
 "if"    | "else"    | "print"
                 { keyword(); }
 
-// Integer literals are matched and displayed using the "literal" tag:
+// TESTING
+{multiplesOf_4} { multiple4(); }
 
+
+// Integer literals are matched and displayed using the "literal" tag:
 {literal}       { literal(); }
+
 
 // Mark numbers bigger than 2147483647 as invalid
 
