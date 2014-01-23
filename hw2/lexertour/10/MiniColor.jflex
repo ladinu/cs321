@@ -131,10 +131,11 @@
 // quick helper methods for each of these four cases as follows:
 
 %{
-  void keyword() { tag("keyword"); }
-  void comment() { tag("comment"); }
-  void literal() { tag("literal"); }
-  void invalid() { tag("invalid"); }
+  void keyword()     { tag("keyword"); }
+  void comment()     { tag("comment"); }
+  void literal()     { tag("literal"); }
+  void invalid_lit() { tag("invalid"); }
+  void invalid()     { tag("invalid"); }
 %}
 
 // Now we are ready to give regular expressions for each of the input
@@ -157,6 +158,55 @@ EndOfLineComment   = "//" {InputCharacter}* {LineTerminator}
 // to generate the appropriate output in each case.  As such, this puts us
 // into the last section of our jflex input file:
 
+posD = [1-9]
+d    = [0-9]
+
+tens             = {posD}{d}
+hundreds         = {posD}{d}{d}
+thousands        = {posD}{d}{d}{d}
+tenThousands     = {posD}{d}{d}{d}{d}
+hundredThousands = {posD}{d}{d}{d}{d}{d}
+million          = {posD}{d}{d}{d}{d}{d}{d}
+tenMillion       = {posD}{d}{d}{d}{d}{d}{d}{d}
+hundredMillion   = {posD}{d}{d}{d}{d}{d}{d}{d}{d}
+
+match0  = 1{d}{d}{d}{d}{d}{d}{d}{d}{d}
+match1  = 2[0-0]{d}{d}{d}{d}{d}{d}{d}{d}
+match2  = 21[0-3]{d}{d}{d}{d}{d}{d}{d}
+match3  = 214[0-6]{d}{d}{d}{d}{d}{d}
+match4  = 2147[0-3]{d}{d}{d}{d}{d}
+match5  = 21474[0-7]{d}{d}{d}{d}
+match6  = 214748[0-2]{d}{d}{d}
+match7  = 2147483[0-5]{d}{d}
+match8  = 21474836[0-3]{d}
+match9  = 214748364[0-6]
+match10 = 2147483647
+
+
+literal = {posD}           | {tens}             | {hundreds} | {thousands}  |
+          {tenThousands}   | {hundredThousands} | {million}  | {tenMillion} |
+          {hundredMillion} | {match0}           | {match1}   | {match2}     |
+          {match3}         | {match4}           | {match5}   | {match6}     |
+          {match7}         | {match8}           | {match9}   | {match10}
+
+
+invalid_lit_0  = 0
+invalid_lit_1  = 214748364[8-9]
+invalid_lit_2  = 21474836[5-9]{d}
+invalid_lit_3  = 2147483[7-9]{d}{d}
+invalid_lit_4  = 214748[4-9]{d}{d}{d}
+invalid_lit_5  = 21474[9-9]{d}{d}{d}{d}
+invalid_lit_6  = 2147[5-9]{d}{d}{d}{d}{d}
+invalid_lit_7  = 214[8-9]{d}{d}{d}{d}{d}{d}
+invalid_lit_8  = 21[5-9]{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_9  = 2[2-9]{d}{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_10 = [3-9]{d}{d}{d}{d}{d}{d}{d}{d}{d}
+invalid_lit_11 = {d}{d}{d}{d}{d}{d}{d}{d}{d}{d}+
+
+invalid_lit = {invalid_lit_0} | {invalid_lit_1}  | {invalid_lit_2}  |
+              {invalid_lit_3} | {invalid_lit_4}  | {invalid_lit_5}  |
+              {invalid_lit_6} | {invalid_lit_7}  | {invalid_lit_8}  |
+              {invalid_lit_9} | {invalid_lit_10} | {invalid_lit_11}
 %%
 
 // Once again, we can adopt the definitions for mini tokens that were
@@ -180,7 +230,12 @@ EndOfLineComment   = "//" {InputCharacter}* {LineTerminator}
 
 // Integer literals are matched and displayed using the "literal" tag:
 
-[0-9]+          { literal(); }
+{literal}       { literal(); }
+
+// Mark numbers bigger than 2147483647 as invalid
+
+{invalid_lit}   { invalid_lit(); }
+
 
 // Comments are matched and displayed using the "comment" tag:
 

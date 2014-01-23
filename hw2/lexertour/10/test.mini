@@ -1,8 +1,9 @@
 // A simple test
 // <span></span>;
-int <span> = 4;
+// int a = 0;
+int <span> = 21474836471;
 int i, t;
-i = 0;
+i = -1;
 t = 0;
 while (i<10) {
   i = i + 1;
