@@ -1,72 +1,124 @@
 Question 1: Regular Expression Warmup [15 points]
 -------------------------------------------------
 
-i) Suppose you have a regular expression that contain n characters
-   concatinated (see following table).
+i)   Suppose you have a regular expression that contain n characters
+     concatinated (see following table).
 
-         n   | RegExp       | states in DFA
-      -------|--------------|-------------------------
-         1   | "c"          | 2
-         2   | "cc"         | 3
-         3   | "ccc"        | 4
-         4   | "cccc"       | 5
-         .   | .            | .
-         .   | .            | .
-         .   | .            | .
-         n   | "c1c2...cn"  | n+1
-   
+           n   | RegExp       | states in DFA | chars
+        -------|--------------|---------------|-----------------
+           1   | "c"          | 2             |    1
+           2   | "cc"         | 3             |    2
+           3   | "ccc"        | 4             |    3
+           4   | "cccc"       | 5             |    4
+           .   | .            | .             |    .
+           .   | .            | .             |    .
+           .   | .            | .             |    .
+           n   | "c1c2...cn"  | n+1           |    n
+     
 
-   This would generate a DFA with n+1 states. First state will have a
-   transition labled by the first character of the regular expression to the
-   skecond state and the second state will have a transition labled by the second
-   character of the regular expression to the third state and so on. The last
-   state will be an accept state.
+     This would generate a DFA with n+1 states. First state will have a
+     transition labled by the first character of the regular expression to the
+     skecond state and the second state will have a transition labled by the second
+     character of the regular expression to the third state and so on. The last
+     state will be an accept state.
 
-   To eliminate the +1 in n+1, one can modify the regular expression so that
-   last character is optional. For example, "ccc*" (see table).
+     To eliminate the +1 in n+1, one can modify the regular expression so that
+     last character is optional. For example, "ccc*" (see table).
 
-         n   | RegExp       | states in DFA
-      -------|--------------|-------------------------
-         1   | "c*"         | 1
-         2   | "cc*"        | 2
-         3   | "ccc*"       | 3
-         4   | "cccc*"      | 4
-         .   |   .          | .
-         .   |   .          | .
-         .   |   .          | .
-         n   | "c1c2...cn*" | n
+           n   | RegExp       | states in DFA | chars
+        -------|--------------|---------------|------------------
+           1   | "c*"         | 1             |    1
+           2   | "cc*"        | 2             |    2
+           3   | "ccc*"       | 3             |    3
+           4   | "cccc*"      | 4             |    4
+           .   |   .          | .             |    .
+           .   |   .          | .             |    .
+           .   |   .          | .             |    .
+           n   | "c1c2...cn*" | n             |    n
 
-   Because the last character of the RegExp is optional, the last state (the
-   final state) will have a transition looping back to itself eliminating the need
-   for an additional state. Now this RegExp has exactly n characters and n states
-   and has only one accept state.
+     Because the last character of the RegExp is optional, the last state (the
+     final state) will have a transition looping back to itself eliminating the need
+     for an additional state. Now this RegExp has exactly n characters and n states
+     and has only one accept state.
 
 
-ii) In part i I constructed a RegExp that has n characters and exactly n states
-    with one accept state. To create a RegExp that has n characters and exactly n
-    states and all states are accepting states I will modify the RegExp from part
-    i. 
+ii)  In part i I constructed a RegExp that has n characters and exactly n states
+     with one accept state. To create a RegExp that has n characters and exactly n
+     states and all states are accepting states I will modify the RegExp from part
+     i. 
 
-    If I alternate each character of RegExp given in part i with the empty
-    string, the resulting DFA will have all of its state be accepting states
-    because it will have to accept the empty string.
+     If I alternate each character of RegExp given in part i with the empty
+     string, the resulting DFA will have all of its state be accepting states
+     because it will have to accept the empty string.
+  
+          n   | RegExp                   | states in DFA | Accept States | chars
+       -------|--------------------------|---------------|---------------|--------
+          1   | "(c|%)*"                 |       1       |       1       |    1
+          2   | "(c|%)(c|%)*"            |       2       |       2       |    2
+          3   | "(c|%)(c|%)(c|%)*"       |       3       |       3       |    3
+          4   | "(c|%)(c|%)(c|%)(c|%)*"  |       4       |       4       |    4
+          .   |         .                |       .       |       .       |    .
+          .   |         .                |       .       |       .       |    .
+          .   |         .                |       .       |       .       |    .
+          n   | "(c1|%)(c2|%)...(cn|%)*" |       n       |       n       |    n
 
-         n   | RegExp                    | states in DFA  | Accept States
-      -------|---------------------------|----------------|---------------
-         1   | "(c|%)*"                  |       1        |       1
-         2   | "(c|%)(c|%)*"             |       2        |       2
-         3   | "(c|%)(c|%)(c|%)*"        |       3        |       3
-         4   | "(c|%)(c|%)(c|%)(c|%)*"   |       4        |       4 
-         .   |         .                 |       .        |       .
-         .   |         .                 |       .        |       .
-         .   |         .                 |       .        |       .
-         n   | "(c1|%)(c2|%)...(cn|%)*"  |       n        |       n
 
-iii) (c|c|c|c)*
 
-iv) (c)*, (c*)*, ((c*)*)*, ...
+iii) To cunstruct a RegExp that has exactly n characters and the corresponding
+     DFA have only one state, you can have a character that is alternated with
+     itself and the resulting regular expression alternated with the same character
+     on and on untill you have n characters. For example consider the following CFG
+     and table that describe the regular expression:
 
-v) 
+
+
+         S => (c\|S)* | c*      // note: symbol '\|' represent ALT op. of RegExp
+
+
+
+            n   | RegExp               | states in DFA  | chars
+         -------|----------------------|----------------|---------------
+            1   | "c*"                 |       1        |       1
+            2   | "(c|c*)*"            |       1        |       2
+            3   | "(c|(c|c*)*)*"       |       1        |       3
+            4   | "(c|(c|(c|c*)*)*)*"  |       1        |       4
+            .   |         .            |       .        |       .
+            .   |         .            |       .        |       .
+            .   |         .            |       .        |       .
+            n   |         .            |       1        |       n
+
+      
+     The RegExp above, containing characters n >=1, will have exactly 1 state
+     for its corresponding DFA.
+         
+
+iv)  Consider the table and CFG given below:
+
+            n   | RegExp           | states in DFA  | Node in AST
+         -------|------------------|----------------|---------------
+            1   | "(c)*"           |       1        |       1
+            2   | "(c*)*"          |       1        |       2
+            3   | "((c*)*)*"       |       1        |       3
+            4   | "(((c*)*))*"     |       1        |       4
+            .   |         .        |       .        |       .
+            .   |         .        |       .        |       .
+            .   |         .        |       .        |       .
+            n   |         .        |       1        |       n
+
+
+            S => (S)* | c
+
+
+      Because the RegExp contain only one character and that character is
+      repeated, the corresponding DFA to the RegExp has a single state. The AST
+      however has n nodes because '*' (repeat) symbol is nested. The 'Rep' node of
+      the AST point to a regular expression node (including another 'Rep' node) that
+      could be repeated. The AST for the given RegExp has multiple 'Rep' nodes
+      pointing to each other and the last 'Rep' node pointing to 'c'.
+
+         [Rep] -> [Rep] -> [Rep] -> ... -> [Rep] -> [c]
+
+v)    
 
 
 Question 2: A Science Experiment  [10 points]
@@ -134,7 +186,7 @@ Question 3: Syntax Uncoloring  [15 points]
   html tags, the original mini source program would remain. This is exactly the
   approach I took here. 
 
-- The only expection is that MiniColor replace certain characters of the mini
+- The only exception is that MiniColor replace certain characters of the mini
   source program with html appropriate symbols. These characters need to be
   converted back to the original mini characters.
 
