@@ -3,37 +3,64 @@ Question 1: Regular Expression Warmup [15 points]
 
 i) Suppose you have a regular expression that contain n characters
    concatinated (see following table).
+
+         n   | RegExp       | states in DFA
+      -------|--------------|-------------------------
+         1   | "c"          | 2
+         2   | "cc"         | 3
+         3   | "ccc"        | 4
+         4   | "cccc"       | 5
+         .   | .            | .
+         .   | .            | .
+         .   | .            | .
+         n   | "c1c2...cn"  | n+1
    
-      n     |   RegExp
-      ------|---------------
-         1  |  "c"
-         2  |  "cc"
-         3  |  "ccc"
-         4  |  "ccc"
-         .  |
-         .  |
-         .  |
 
-   This would generate a DFA with n+1 states. In this DFA, there would be a
-   state for every character and an accept state for the last character. To
-   eliminate the +1 in n+1, one can modify the regular expression so that last
-   character is optional. For example, "ccc*" (see table).
+   This would generate a DFA with n+1 states. First state will have a
+   transition labled by the first character of the regular expression to the
+   skecond state and the second state will have a transition labled by the second
+   character of the regular expression to the third state and so on. The last
+   state will be an accept state.
 
-      n     |   RegExp  | number of states in DFA
-      ------|-----------|------------------------
-         1  |  "c*"     |  1
-         2  |  "cc*"    |  2
-         3  |  "ccc*"   |  3
-         4  |  "ccc*"   |  4
-         .  |           |  .
-         .  |           |  .
-         .  |           |  .
+   To eliminate the +1 in n+1, one can modify the regular expression so that
+   last character is optional. For example, "ccc*" (see table).
 
-   Now there are n-1 states for each character and because last character is
-   preceded with a "*", you have a transition from start state to accept state
-   eliminating the need for an extra state.
+         n   | RegExp       | states in DFA
+      -------|--------------|-------------------------
+         1   | "c*"         | 1
+         2   | "cc*"        | 2
+         3   | "ccc*"       | 3
+         4   | "cccc*"      | 4
+         .   |   .          | .
+         .   |   .          | .
+         .   |   .          | .
+         n   | "c1c2...cn*" | n
 
-ii) (c|%)(c|%)*
+   Because the last character of the RegExp is optional, the last state (the
+   final state) will have a transition looping back to itself eliminating the need
+   for an additional state. Now this RegExp has exactly n characters and n states
+   and has only one accept state.
+
+
+ii) In part i I constructed a RegExp that has n characters and exactly n states
+    with one accept state. To create a RegExp that has n characters and exactly n
+    states and all states are accepting states I will modify the RegExp from part
+    i. 
+
+    If I alternate each character of RegExp given in part i with the empty
+    string, the resulting DFA will have all of its state be accepting states
+    because it will have to accept the empty string.
+
+         n   | RegExp                    | states in DFA  | Accept States
+      -------|---------------------------|----------------|---------------
+         1   | "(c|%)*"                  |       1        |       1
+         2   | "(c|%)(c|%)*"             |       2        |       2
+         3   | "(c|%)(c|%)(c|%)*"        |       3        |       3
+         4   | "(c|%)(c|%)(c|%)(c|%)*"   |       4        |       4 
+         .   |         .                 |       .        |       .
+         .   |         .                 |       .        |       .
+         .   |         .                 |       .        |       .
+         n   | "(c1|%)(c2|%)...(cn|%)*"  |       n        |       n
 
 iii) (c|c|c|c)*
 
