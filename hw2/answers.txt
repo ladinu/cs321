@@ -4,16 +4,16 @@ Question 1: Regular Expression Warmup [15 points]
 i)   Suppose you have a regular expression that contain n characters
      concatinated (see following table).
 
-           n   | RegExp       | states in DFA | chars
-        -------|--------------|---------------|-----------------
-           1   | "c"          | 2             |    1
-           2   | "cc"         | 3             |    2
-           3   | "ccc"        | 4             |    3
-           4   | "cccc"       | 5             |    4
-           .   | .            | .             |    .
-           .   | .            | .             |    .
-           .   | .            | .             |    .
-           n   | "c1c2...cn"  | n+1           |    n
+           n   | RegExp          | states in DFA | chars
+        -------|-----------------|---------------|-----------------
+           1   | "c"             |       2       |    1
+           2   | "cc"            |       3       |    2
+           3   | "ccc"           |       4       |    3
+           4   | "cccc"          |       5       |    4
+           .   | .               |       .       |    .
+           .   | .               |       .       |    .
+           .   | .               |       .       |    .
+           n   | "c_1c_2...c_n"  |       n+1     |    n
      
 
      This would generate a DFA with n+1 states. First state will have a
@@ -25,16 +25,16 @@ i)   Suppose you have a regular expression that contain n characters
      To eliminate the +1 in n+1, one can modify the regular expression so that
      last character is optional. For example, "ccc*" (see table).
 
-           n   | RegExp       | states in DFA | chars
-        -------|--------------|---------------|------------------
-           1   | "c*"         | 1             |    1
-           2   | "cc*"        | 2             |    2
-           3   | "ccc*"       | 3             |    3
-           4   | "cccc*"      | 4             |    4
-           .   |   .          | .             |    .
-           .   |   .          | .             |    .
-           .   |   .          | .             |    .
-           n   | "c1c2...cn*" | n             |    n
+           n   | RegExp          | states in DFA | chars
+        -------|-----------------|---------------|------------------
+           1   | "c*"            |       1       |    1
+           2   | "cc*"           |       2       |    2
+           3   | "ccc*"          |       3       |    3
+           4   | "cccc*"         |       4       |    4
+           .   |   .             |       .       |    .
+           .   |   .             |       .       |    .
+           .   |   .             |       .       |    .
+           n   | "c_1c_2...c_n*" |       n       |    n
 
      Because the last character of the RegExp is optional, the last state (the
      final state) will have a transition looping back to itself eliminating the need
@@ -44,25 +44,23 @@ i)   Suppose you have a regular expression that contain n characters
 
 
 
-ii)  In part i I constructed a RegExp that has n characters and exactly n states
-     with one accept state. To create a RegExp that has n characters and exactly n
-     states and all states are accepting states I will modify the RegExp from part
-     i. 
+ii)  Beacuse RegExp '%' cannot be used, RegExp '*' will be used to make a
+     bigger RegExp in which the corresponding DFA will have all of its states be
+     accepting states and will have n states. To construct this RegExp you must have
+     n distinct characters. All distinct characters will be concatinated and each
+     character is preceded by '*'. Consider the following table (note: each c_i is a
+     distinct character):
 
-     If I alternate each character of RegExp given in part i with the empty
-     string, the resulting DFA will have all of its state be accepting states
-     because it will have to accept the empty string.
-  
           n   | RegExp                   | states in DFA | Accept States | chars
        -------|--------------------------|---------------|---------------|--------
-          1   | "(c|%)*"                 |       1       |       1       |    1
-          2   | "(c|%)(c|%)*"            |       2       |       2       |    2
-          3   | "(c|%)(c|%)(c|%)*"       |       3       |       3       |    3
-          4   | "(c|%)(c|%)(c|%)(c|%)*"  |       4       |       4       |    4
+          1   | "c_0**"                  |       1       |       1       |    1
+          2   | "c_0*c_1*"               |       2       |       2       |    2
+          3   | "c_0*c_1*c_2*"           |       3       |       3       |    3
+          4   | "c_0*c_1*c_2*c_3*"       |       4       |       4       |    4
           .   |         .                |       .       |       .       |    .
           .   |         .                |       .       |       .       |    .
           .   |         .                |       .       |       .       |    .
-          n   | "(c1|%)(c2|%)...(cn|%)*" |       n       |       n       |    n
+          n   | "c_0*c_1*c_2*c_3*c_n*"   |       n       |       n       |    n
 
 
 
@@ -124,7 +122,9 @@ iv)  Consider the table and CFG given below:
 
          [Rep] -> [Rep] -> [Rep] -> ... -> [Rep] -> [c]
 
-v)    The regular expression ((ab)*|a*)b contain four characters and has 7
+
+
+v)    The regular expression "((ab)*|a*)b" contain four characters and has 7
       states in its corresponding DFA.
 
 
@@ -134,14 +134,14 @@ Question 2: A Science Experiment  [10 points]
 -------------------------------------------------------------------------------
 
 - The potential perforamnce problem with the given jflex program is that it
-  starts at the top of the file and tries to match the given pattern
-  "(.|\n)*ABORT\n". This can be expensive if the file is large and contain many
-  failures which are marked as "ABORT".
+  match all data that ends with ABORT. If the file is too large and contain
+  many data before the ABORT line, the jflex buffer would not be able to contain
+  all of the data.
 
-- Assuming nothing (other than data) is written to the file when a sucessful
-  run is completed, more eficent program would start looking at the file from
-  the bottom and continue up untill it sees a "ABORT" flag. Now everything below
-  this flag can be presented and aeverything above ignored.
+- Assuming ABORT\n is not written to the file when a sucessful run is
+  completed, more eficent program would start looking at the file from the
+  bottom and continue up untill it sees a "ABORT" flag. Now everything below this
+  last ABORT line can be recorded as a sucessful run.
 
 - The following is a jflex program that solves this problem:
 
