@@ -2,7 +2,7 @@ Question 1: Regular Expression Warmup [15 points]
 -------------------------------------------------------------------------------
 
 i)   Suppose you have a regular expression that contain n characters
-     concatinated (see following table).
+     concatenated (see following table).
 
            n   | RegExp          | states in DFA | chars
         -------|-----------------|---------------|-----------------
@@ -17,8 +17,8 @@ i)   Suppose you have a regular expression that contain n characters
      
 
      This would generate a DFA with n+1 states. First state will have a
-     transition labled by the first character of the regular expression to the
-     skecond state and the second state will have a transition labled by the second
+     transition labeled by the first character of the regular expression to the
+     second state and the second state will have a transition labeled by the second
      character of the regular expression to the third state and so on. The last
      state will be an accept state.
 
@@ -44,10 +44,10 @@ i)   Suppose you have a regular expression that contain n characters
 
 
 
-ii)  Beacuse RegExp '%' cannot be used, RegExp '*' will be used to make a
+ii)  Because RegExp '%' cannot be used, RegExp '*' will be used to make a
      bigger RegExp in which the corresponding DFA will have all of its states be
      accepting states and will have n states. To construct this RegExp you must have
-     n distinct characters. All distinct characters will be concatinated and each
+     n distinct characters. All distinct characters will be concatenated and each
      character is preceded by '*'. Consider the following table (note: each c_i is a
      distinct character):
 
@@ -66,10 +66,10 @@ ii)  Beacuse RegExp '%' cannot be used, RegExp '*' will be used to make a
 
 
 
-iii) To cunstruct a RegExp that has exactly n characters and the corresponding
+iii) To construct a RegExp that has exactly n characters and the corresponding
      DFA have only one state, you can have a character that is alternated with
      itself and the resulting regular expression alternated with the same character
-     on and on untill you have n characters. For example consider the following CFG
+     on and on until you have n characters. For example consider the following CFG
      and table that describe the regular expression:
 
 
@@ -133,19 +133,20 @@ v)    The regular expression "((ab)*|a*)b" contain four characters and has 7
 Question 2: A Science Experiment  [10 points]
 -------------------------------------------------------------------------------
 
-- The potential perforamnce problem with the given jflex program is that it
+- The potential performance problem with the given jflex program is that it
   match all data that ends with ABORT. If the file is too large and contain
   many unsuccessful runs of data before the ABORT line, the jflex buffer would
   not be able to contain all of the data.
 
-- Assuming ABORT\n is not written to the file when a sucessful run is
-  completed, more eficent program would match ABORT line, numeric data and the
+- Assuming ABORT\n is not written to the file when a successful run is
+  completed, more efficient program would match ABORT line, numeric data and the
   end of file (EOF). This would, of course, require a regular expression that
   would match "numeric" data. Another problem is that if the data in the
-  sucessful run gets too big for the jflex buffer.
+  successful run gets too big for the jflex buffer.
 
 
-- The following is a jflex program that solves this problem:
+- I couldn't figure out how to do this in jflex.
+
 
 
 Question 3: Syntax Uncoloring  [15 points]
@@ -213,7 +214,7 @@ a) The following jflex regular expressions match decimal integer literal that
    are between 1 and 999999999. The first RegExp match any digit from 0...9. The
    second RegExp match positive digits i.e 1...9. The third RegExp match positive
    numbers that has two digits. The fourth RegExp match digits that has three
-   digits. This goes on and on untill we are able to match numbers from 1 to
+   digits. This goes on and on until we are able to match numbers from 1 to
    999999999.
 
       d                = [0-9]
