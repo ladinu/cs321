@@ -124,7 +124,8 @@ iv)  Consider the table and CFG given below:
 
          [Rep] -> [Rep] -> [Rep] -> ... -> [Rep] -> [c]
 
-v)    
+v)    The regular expression ((ab)*|a*)b contain four characters and has 7
+      states in its corresponding DFA.
 
 
 
