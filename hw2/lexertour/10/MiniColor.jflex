@@ -60,7 +60,6 @@
   System.out.println("  .invalid {color:red}");
   System.out.println("  .multiple {font-weight: bold}");
   System.out.println("</style>");
-  System.out.println("<script type=\"text/javascript\">window.onload = function(){setInterval(function(){location.reload()}, 3000);}</script>");
   System.out.println("</head>");
   System.out.println("<body>");
 %init}
@@ -136,7 +135,6 @@
   void keyword()     { tag("keyword"); }
   void comment()     { tag("comment"); }
   void literal()     { tag("literal"); }
-  void multiple4()   { tag("multiple"); }
   void invalid_lit() { tag("invalid"); }
   void invalid()     { tag("invalid"); }
 %}
@@ -204,16 +202,14 @@ invalid_lit_11   = {d}{d}{d}{d}{d}{d}{d}{d}{d}{d}*
 // goung to be a pattern. This pattern is all the multiples of 4
 // which have 1 or 2 digits i.e {4, 8, 12, 16, 20, 24, ..., 96}
 
-case1          = "12" | "16" | "20" | "24" | "28" | "32" | "36" | 
-                 "40" | "44" | "48" | "52" | "56" | "60" | "64" | 
-                 "68" | "72" | "76" | "80" | "84" | "88" | "92" | 
-                 "96" | "04" | "08"
+posTwoDigitMul4 = "12" | "16" | "20" | "24" | "28" | "32" | "36" | 
+                  "40" | "44" | "48" | "52" | "56" | "60" | "64" | 
+                  "68" | "72" | "76" | "80" | "84" | "88" | "92" | 
+                  "96" | "04" | "08"
 
-case2          = "00"
+twoDigitMul4   = {posTwoDigitMul4} | "00"
 
-twoDigitMul4   = {case1}|{case2}
-
-multiplesOf_4  = "4" | "8" | {case1} | [1-9][0-9]*{twoDigitMul4}
+multiplesOf_4  = "4" | "8" | {posTwoDigitMul4} | [1-9][0-9]*{twoDigitMul4}
 
 
 // Combine 
@@ -226,7 +222,8 @@ literal        = {posD}           | {tens}             | {hundreds} | {thousands
                  {tenThousands}   | {hundredThousands} | {million}  | {tenMillion} |
                  {hundredMillion} | {match0}           | {match1}   | {match2}     |
                  {match3}         | {match4}           | {match5}   | {match6}     |
-                 {match7}         | {match8}           | {match9}   | {match10}
+                 {match7}         | {match8}           | {match9}   | {match10}    |
+                 {multiplesOf_4}
 
 %%
 
@@ -248,9 +245,6 @@ literal        = {posD}           | {tens}             | {hundreds} | {thousands
 "int"   | "boolean" | "while" |
 "if"    | "else"    | "print"
                 { keyword(); }
-
-// TESTING
-{multiplesOf_4} { multiple4(); }
 
 
 // Integer literals are matched and displayed using the "literal" tag:

@@ -1,3 +1,10 @@
+// Name: Ladinu Chandrasinghe
+// Assignment 2: "Lexer"
+// CS 321 Languages and Compiler Design I, Winter 2014
+
+
+
+
 Question 1: Regular Expression Warmup [15 points]
 -------------------------------------------------------------------------------
 
@@ -145,8 +152,7 @@ Question 2: A Science Experiment  [10 points]
   successful run gets too big for the jflex buffer.
 
 
-- I couldn't figure out how to do this in jflex.
-
+- I couldn't figure out how to do this with jflex.
 
 
 Question 3: Syntax Uncoloring  [15 points]

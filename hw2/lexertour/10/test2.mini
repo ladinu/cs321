@@ -1,0 +1,16 @@
+// A simple test
+// <span></span>;
+// int a = 0;
+
+int i, t;
+
+i = 1;
+t = 8;
+
+int <span> = 23
+
+while (i<10) {
+  i = i + 1;
+  t = t + i;
+}
+print t;;

@@ -12,15 +12,13 @@ import java.io.*;
  *  to find a DFA (but we do not attempt minimization); and then
  *  using the resulting DFA to attempt matches of input strings.
  */
-public class RegExpTest {
+public class RegExpTestR {
     public static void main(String[] args) {
         // Read regular expression:
         Handler handler = new SimpleHandler();
         RegExp  r       = RDRegExpParser.parse(handler, args);
 
         // Print out in fully parenthesized form:
-        System.out.println("r = " + r. fullParens());
-        r.toDot("ast.dot");
 
         // Now build an NFA for r, number its states, and
         // collect them together in an array.
@@ -31,26 +29,16 @@ public class RegExpTest {
  
         // Output a description of the machine, including the
         // transitions from each state.
-        for (int st=0; st<states.length; st++) {
-            states[st].display();
-        }
-        DotOutput.toDot(states, "nfa.dot");
 
         // Run the subset construction to generate a corresponding
         // DFA and then output a description of that DFA.
         State start = new SubsetConstruction(states).getDFA();
         State[] dfa = new State[start.numberStates(0)];
         start.collectStates(dfa);
-        System.out.println("number of DFA states = " + dfa.length);
-        for (int st=0; st<dfa.length; st++) {
-            dfa[st].display();
-        }
-        DotOutput.toDot(dfa, "dfa.dot");
+
+        System.out.println("states: "+ dfa.length);
 
         // Read input lines and use the generated DFA to match them
         // against the original regular expression.
-        Source input = new StdinSource(handler);
-        String line;
-        System.out.println("STATES: "+dfa.length);
     }
 }
