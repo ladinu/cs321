@@ -1,0 +1,104 @@
+// 13 Breaking arithmetic expressions in to two "levels"; we treat a
+//    multiplication of 1 or more integers as a "product", and then
+//    we look for ways to combine multiple "product"s using + or -.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+      new Example(System.in);  // Read from standard input
+      getNextToken();          // Read the first token
+      int n = readExpr();
+      checkEOF();
+      System.out.println("Result is: " + n);
+  }
+
+  // Read a simple arithmetic expression from the input stream:
+  public static int readExpr() {
+      int n = readProduct(); // Read the first product
+      for (;;) {             // Then look for + or - operators
+          if (token.kind==ADD) {
+              getNextToken();
+              n = n + readProduct();
+          } else if (token.kind==SUB) {
+              getNextToken();
+              n = n - readProduct();
+          } else {
+              return n;
+          }
+      }
+  }
+
+  // Read a product, consisting of sequence of 1 or more integers
+  // separated by * symbols.
+  public static int readProduct() {
+      int n = readInt(); // Read the first integer
+      for (;;) {         // Then look for operators
+          if (token.kind==MUL) {
+              getNextToken();
+              n = n * readInt();
+          } else {
+              return n;
+          }
+      }
+  }
+
+  // Read a single integer literal from the input token stream
+  public static int readInt() {
+      if (token.kind!=INTLIT) {
+          parserFails("missing integer literal");
+      }
+      int n = Integer.parseInt(token.image);
+      getNextToken();
+      return n;
+  }
+
+  // Check that we have reached the end of the input, consuming
+  // all tokens.
+  public static void checkEOF() {
+      if (token.kind!=EOF) {
+          parserFails("unused tokens (\"" + token.image + " ...\") in input");
+      }
+  }
+
+  // A simple mechanism for reporting a syntax error and aborting:
+  public static void parserFails(String msg) {
+      System.err.println("Syntax error (line "
+                         + token.beginLine
+                         + ", column "
+                         + token.beginColumn
+                         + "): "
+                         + msg);
+      System.exit(1);
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}
+
+TOKEN : {
+  <ADD : "+">
+| <SUB : "-">
+| <MUL : "*">
+}

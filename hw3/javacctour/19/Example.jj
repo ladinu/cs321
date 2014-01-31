@@ -1,0 +1,66 @@
+// 19 Building and displaying abstract syntax trees.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+      new Example(System.in);  // Read from standard input
+      Expr n = Top();
+      System.out.println("Abstract syntax tree is:");
+      n.indent();
+      n.toDot("ast.dot");
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the grammatical rules of the input language: ---------------------
+
+Expr Top() : { Expr n; } {
+  n=E() <EOF> { return n; }
+}
+
+Expr E() : { Expr n, m; } {
+  n=P() ( ("+" m=P() { n = new AddExpr(n,m); })
+        | ("-" m=P() { n = new SubExpr(n,m); }))*
+  { return n; }
+}
+
+Expr P() : { Expr n, m; } {
+   n=A() ("*" m=A() { n = new MulExpr(n,m); })*
+   { return n; }
+}
+
+Expr A() : { Expr n; } {
+  ( "(" n=E() ")"
+  | n=I())
+  { return n; }
+}
+
+Expr I() : { Token t; } {
+  t=<INTLIT>
+  { return new IntExpr(Integer.parseInt(t.image)); }
+}
+
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}

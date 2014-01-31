@@ -1,0 +1,8 @@
+// This looks a little bit like a query for a
+// database system.
+for (x,y,z) in table,
+ do print x
+    print y  /* we can put a comment here */
+    print z
+
+end

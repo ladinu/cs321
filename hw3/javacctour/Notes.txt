@@ -1,0 +1,904 @@
+------------------------------------------------------------------------
+CS 321 Winter 2014 Lab 3                                A tour of javacc
+------------------------------------------------------------------------
+
+This lab will introduce you to javacc, a tool that can be used to help
+build Java implementations of parsers and associated lexers.
+
+The javacc software is already installed on the Linux lab computers.
+You can get a copy of javacc for yourself, as well as all kinds of
+more advanced documentation and sample programs from the javacc
+web site at: https://javacc.java.net.  Note that we will be using
+version 5.0 of javacc in this class; in our experience, version 6.x
+releases of javacc do not yet work correctly.
+
+Like jflex, javacc allows us to define tokens/lexemes by specifying a
+collection of regular expressions.
+
+jflex is good for describing a broad range of text processing utilities.
+This includes (but is not limited to) the construction of lexical
+analyzers that can be used to break an input stream in to a sequence of
+tokens, returning a code (or an object) to describe the next token in
+the input stream every time the lexer is called.  However, jflex does
+not provide any direct support for using the resulting streams of tokens
+as input to a parser.  Of course, this can be done, but it requires
+separate code.
+
+javacc is intended primarily for building programs that parse an input
+stream.  Programs using javacc always include a lexer that breaks the
+input stream into a collection of token objects.  This can make it more
+awkward to use javacc for general text processing utilities.  However,
+javacc does provide some additional special features that make it
+particularly well-suited to building parsers (specifically, using a
+"top-down" parsing strategy).
+
+------------------------------------------------------------------------
+00 Basic structure of a .jj file
+
+Points to note:
+
+-  Java style comments
+
+-  Parser (the part of the program that consumes tokens):
+
+     PARSER_BEGIN(name)
+     public class name {
+       ... your code goes here ...
+     }
+     PARSER_END(name)
+
+   The class name, and the names in the PARSER_BEGIN and PARSER_END
+   markers, as well as the filename (name.jj) in which the code appears
+   should all match.
+
+-  Lexer (the part of the program that generates tokens):
+
+   We can specify a collection of input elements that we want the lexer
+   to ignore using:
+
+     SKIP : { regular_expression_goes_here }
+
+   We can specify a collection of token types that we want the lexer to
+   recognize using:
+
+     TOKEN : { tokenSpec1 | ... | tokenSpecN }
+
+   Each tokenSpec takes the form:
+
+     <TOKNAME : regular_expression>
+
+   where TOKNAME is the name that will be used in the Java code to refer
+   to tokens of this type, and regular_expression is a pattern that
+   specifies what the corresponding lexemes look like.
+
+This particular program expects to read a sequence of integer values
+separated by whitespace.
+
+The line "new Example(System.in)" initializes the lexer to read from the
+standard input.
+
+The lexer uses has a global variable called "token" that points to an
+object describing the current token.
+
+We can tell the lexer to read item in the input, updating the "token"
+variable, by calling getNextToken().
+
+Each token contains a kind field that specifies the token type.  In this
+case, code 0 represents the end of the input file (EOF) and code 5
+(which we can refer to in our Java code using the symbolic name INTLIT
+that was specified in the TOKEN definition) represents an integer
+literal.  If you want to see the mapping from symbolic names to
+numerical constants, look in ExampleConstants.java.  The definition of
+the tokenImage array in that file might also explain what happened to
+codes 1--4.  But those details don't really matter, just so long as each
+token type gets a different code number.
+
+Compile Example.jj using the commands at the top of the file.  Point to
+the collection of generated files.  No need to go in to details about
+what each of these does.
+
+Run the resulting program using "java Example".  Type in some integers,
+separated by whitespace.  Observe expected behavior.  Terminate by
+pressing ^D.  (Be careful not to press ^D twice or you will also close
+the terminal window!)
+
+Note that, to save us having to type in the same input every time we run
+a test, we can also package up complete test run on a single line:
+
+   echo "1 2 3 4" | java Example
+
+It is also worth showing what happens when we provide an input with
+symbols that are not matched by any of the SKIP or TOKEN rules.
+
+As a further shortcut, the folders in this lab also include a Makefile
+that will allow us to build each of the programs using a command:
+
+   make
+
+and to clean up (i.e., remove the automatically generated files) using:
+
+   make clean
+
+
+------------------------------------------------------------------------
+01 The SKIP section, and a demonstration using more complex regular
+   expressions to match comments
+
+In this step, we add two lines to the SKIP part of the lexical
+specification, each corresponding to a different form of C++/Java style
+comment.
+
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>                 // <<<<
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">        // <<<<
+
+Note that new alternatives are introduced with a leading "|" symbol.
+
+Examples like the following show the expected behavior:
+
+  echo "1 2 /* 3 */ 4 5"    | java Example
+  echo "1 2 // 3 4 5"       | java Example
+
+The next example shows what happens when we have an unterminated
+comment:
+
+  echo "1 2 /* 3 4 5"       | java Example
+
+But in this case, the input would still have passed through the lexer if
+we'd include the following addition definitions inside the TOKEN
+section, as in the following:
+
+  TOKEN : {
+    <INTLIT : "0" | ["1"-"9"] (["0"-"9"])*>
+  | <MULT   : "*">          // <<<<
+  | <DIV    : "/">          // <<<<
+  }
+
+Going back to the original version (i.e., without MULT or DIV tokens),
+the next example illustrates an important principle:
+
+  echo "1 2 /* 3 */ 4 5 */" | java Example
+
+This example triggers an error, showing that regular expressions in SKIP
+sections are skipped as soon as a match is found.  In other words, SKIP
+does not use the the rule of the longest lexeme/maximal munch.
+
+------------------------------------------------------------------------
+02 Token names beginning with a # symbol are used to introduce local
+   abbreviations/macros for regular expressions, and do not result in
+   new token types.
+
+The example used here is as follows:
+
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}
+
+------------------------------------------------------------------------
+03 As with jflex: A javacc lexer will use whichever token description
+   allows it to match the largest number of characters (i.e., the rule
+   of the longest lexeme).  But if two rules match the same number of
+   characters, then priority is given to whichever rule appears first in
+   the .jj file.
+
+This step adds the following token definitions:
+
+  TOKEN : {
+    <KEYWORD : "while" | "print" | "if" | "else" | "for" | "var">
+  }
+
+Try something like the following and you should see a mix of token codes
+with some words recognized as identifiers and others as keywords:
+
+  echo "if while is a keyword then print" | java Example
+
+Now move the TOKEN definition above after the rule for identifiers,
+recompile, and try the same command a second time ...
+
+------------------------------------------------------------------------
+04 Token objects contain information about the position of a token in
+   the input stream, and they can be passed as arguments to other
+   functions.
+
+Every token has the following fields:
+
+- kind: A numeric code describing the token type
+
+- image: The lexeme text
+
+- beginLine, beginColumn, endLine, endColumn: The start and end positions
+  of the token in the input stream
+
+- next: A pointer to the next token if it has already been read; this
+  allows us to "look ahead" in the input stream if necessary.  (We'll
+  look at this last feature a little more in the next step.)
+
+This program also adds some tokens like OPEN, COMMA, and CLOSE that are
+not covered by the cases in describe(); this allows us to
+test/demonstrate the use of the default branch.
+
+The file contains some text that is spread across multiple lines to
+demonstrate these behaviors:
+
+  java Example < test
+
+------------------------------------------------------------------------
+05 We can "look ahead" to see what tokens will appear later in the token
+   stream without loosing track of earlier tokens.  All of the future
+   tokens that are read in this process are connected to the current
+   token in a linked list using the "next" fields of each object to
+   point to the next token.
+
+   The purpose of the code in this step is to give a sense of what is
+   possible.  In practice, parsers often try to avoid reading ahead in
+   the token stream ... but, sometimes, as we'll see later, peeking one
+   or two tokens in to the future can provide useful information about
+   an input should be parsed.
+
+Take a look at the code to get a sense of what it does.  Try the same
+example as before:
+
+  java Example < test
+
+------------------------------------------------------------------------
+06 Read a sequence of integer values and print out the square of each
+   one, demonstrating that we've made the switch from reading strings of
+   characters to figuring out what numbers those characters represent.
+
+------------------------------------------------------------------------
+07 Reading a sequence of numbers and calculating their sum.
+
+------------------------------------------------------------------------
+08 Reading a sequence of numbers in to an array.  This corresponds
+   to an abstract syntax for the simple language in which all valid
+   "programs"/"inputs" are lists of integer values.  Once we have
+   captured the whole data set in a single array, we can pass it as a
+   unit to functions that operate on arrays of numbers.
+
+------------------------------------------------------------------------
+09 Evaluating simple arithmetic expressions made up from integers and
+   the + operator.
+
+Extend the token to recognize new "+" token (with name ADD).
+
+Implement simple functions, walking through details, for:
+
+- reading a single integer (readInt())
+
+- reading an expression (readExpr())
+
+- checking for the end of file (checkEOF())
+
+Include a main() method and a parserFails() utility function to
+report errors.
+
+See what happens with examples like these:
+
+  $ echo "1 + 2 +" | java Example
+  Syntax error (line 1, column 8): missing integer literal
+  $ echo "1 + 2 + 3 4" | java Example
+  Syntax error (line 1, column 11): unused tokens ("4 ...") in input
+  $
+
+------------------------------------------------------------------------
+10 Evaluating simple arithmetic expressions made up from integers and
+   the + and - operators.  Once we add subtraction, the choice between
+   grouping to the left and grouping to the right becomes significant.
+
+Add a "-" token (call it SUB) and extend the code in readExpr() with
+an extra case for subtraction.
+
+  $ echo "1 - 1 - 1" | java Example
+  Result is: -1
+  $
+
+This approach always handles the leftmost operations first; we say that
+"-" groups to the left here.  The effect is the same as if we had put
+parentheses around the leftmost operand, as in (1 - 1) - 1.  What if we
+wanted 1 - (1 - 1) instead, grouping to the right?
+
+------------------------------------------------------------------------
+11 Evaluating simple arithmetic expressions made up from integers and
+   the + and - operators.  This time, however, we use recursive calls
+   (in a similar way to what we did in 08, in fact), so that the
+   operations group to the right.
+
+Eliminate the loop, but introduce recursive calls to checkExpr()
+instead.
+
+This time:
+
+  $ echo "1 - 1 - 1" | java Example
+  Result is: 1
+  $
+
+------------------------------------------------------------------------
+12 We'll go back to left associativity for our operators, but now add
+   a multiplication operation to the mix, bringing questions about
+   operator precedence in to mind ...
+
+Back to Step 10, but adding in a new "*" (MUL) token for multiply and
+adding an extra case for this operator in readExpr().
+
+Sample results:
+
+  $ echo "3 * 2 + 1" | java Example
+  Result is: 7
+  $ echo "1 + 2 * 3" | java Example
+  Result is: 9
+  $
+
+All operations are treated here with equal precedence, all grouping to
+the left.  This isn't the order of operations that most people expect to
+see ...
+
+------------------------------------------------------------------------
+13 Breaking arithmetic expressions in to two "levels"; we treat a
+   multiplication of 1 or more integers as a "product", and then we look
+   for ways to combine multiple "product"s using + or -.
+
+Break readExpr() into two pieces: readProduct() and readExpr().  Mostly
+the same code, but now spread over two methods.
+
+This gives us the behavior that we might expect:
+
+  $ echo "3 * 2 + 1" | java Example
+  Result is: 7
+  $ echo "1 + 2 * 3" | java Example
+  Result is: 7
+  $
+
+In words, what we have here is as follows:
+
+- a "product" is a sequence of 1 or more integers separated by *s.
+
+- an "expressions" is a sequence of 1 or more integers separated
+  by +s or -s.
+
+In terms of context free grammars, we could state this as:
+
+  P -> I
+    |  P * I
+
+  E -> P
+    |  E + P
+    |  E - P
+
+assuming that I represents integers and the symbols *, +, - represent
+themselves.
+
+(Strictly speaking, if you look at the structure of the code we've
+written, it would be more accurate to say that we're treating each
+product as a single integer followed by zero or more multiplications,
+each of which is written using an "*" symbol followed by an integer.
+So, using something like the syntax of regular expressions, we could
+define P using something like the following:
+
+   P  ->  I ("*" I)*
+
+In a similar way, the following would be a more accurate way to
+characterize the code that we've written for parsing expressions:
+
+   E  ->  P ("+" P | "-" P)*
+
+We'll stick with the grammar fragments above for now, but we will come
+back again to see the notation used here again before we're done!)
+
+
+------------------------------------------------------------------------
+14 Adding parentheses so that users can control the order in which
+   operations are performed.
+
+Add tokens for the OPEN and CLOSE parenthesis symbols.
+
+Rename readInt() as readAtom(), and add extra code to test for an open
+parenthesis, read the parenthesized expression, and then check for a
+matching close parenthesis.
+
+Now we can freely use parentheses in the expressions that we write:
+
+  $ echo "1 + 2 * 3" | java Example
+  Result is: 7
+  $ echo "3 * 2 + 1" | java Example
+  Result is: 7
+  $ echo "(1 + 2) * 3" | java Example
+  Result is: 9
+  $ echo "3 * (2 + 1)" | java Example
+  Result is: 9
+  $ echo "(((3)) * (((2) + 1)))" | java Example
+  Result is: 9
+  $
+
+Looking at the code, we have now created three methods for reading input
+expressions.  In combination, these functions will either allow us to
+calculate the value of an expression, or else to report an error if the
+expression is not well-formed.  Each of the three methods---readExpr(),
+readProduct(), and readAtom()---calls one of the other methods, so we
+say that these functions are "mutually recursive".
+
+The technique we are using here is known as "recursive descent" parsing.
+We've just seen where the "recursive" part of this name comes from.  The
+"descent" part of the name comes from thinking about how the parsing
+process corresponds to the abstract syntax or parse tree structures that
+might be used to capture the final result:  In essence, this parsing
+process starts at the top of the tree and, as it makes each recursive
+call, "descends" to the leaf nodes at the bottom.  More generally,
+parsing methods that work in this way are oftern referred to as "top
+down" strategies.  All of this terminology, however, might be a bit
+easier to understand once we've passed through a few more steps to start
+looking at abstract syntax tree structures ...
+
+In the meantime, notice the close correspondence between the structure
+of the three methods and the context free grammar that we might write to
+document the structure of the expressions in our simple arithmetic
+language:
+
+  E -> P         an expression with a single product
+    |  E + P     an expression that adds a product
+    |  E - P     an expression that subtracts a product
+
+  P -> A         a product with a single atom
+    |  P * A     a product with multiple atoms
+
+  A -> I         integer expressions
+    |  ( E )     parenthesized expressions
+
+In many ways, this grammar notation seems much clearer and easier to
+read than the now cluttered recursive descent code that we've written by
+hand.
+
+Wouldn't it be nice if we could write our parser using a notation in a
+way that looks a bit more like the grammar ... ?
+
+(And wouldn't this be *especially* nice as we start to work with more
+complicated languages that have more complicated grammars, and hence are
+likely to require even more complicated parsing code ...)
+
+(And it would be even better if this also meant that the behavior of our
+parser could be analyzed automatically to detect some potential sources
+of error or ambiguity ...)
+
+------------------------------------------------------------------------
+15 Using javacc's syntax for writing parsing functions ... at last!
+   (SPOILER ALERT: we might still have some work to do after this ...)
+
+javacc provides a special syntax for writing parsing functions that look
+something like this:
+
+  type Name(args) : { localvardecls } {
+    body
+  }
+
+The "type" portion specifies the type of value that we expect the
+parsing function to return (all of our examples so far have produced int
+values).
+
+The "Name" part identifies the function and typically corresponds to a
+nonterminal symbol in the grammar.
+
+The "args" part specifies any input arguments that the parsing function
+requires.  Most of the examples we've seen so far do not have any
+arguments, although we did see one example in Step 08 where the parsing
+function for reading an array took an integer parameter, soFar, as an
+argument.
+
+The "localvardecls" part provides declarations for any variables that we
+need in the body of our parsing function, for example, to store
+intermediate values.
+
+And, finally, the "body" portion specifies the details of how the
+parsing function should work.  This body can be made up from a
+collection of:
+
+- token references, like <EOF> or <INTLIT>.  If, in addition, we want
+  to save the associated Token value in a variable t, then we can write
+  t=<EOF> or t=<INTLIT>, respectively.
+
+- character strings describing specific input symbols that should be
+  matched.  Instead of defining a special <ADD : "+"> token, for
+  example, we can just write "+" in the parsing function and javacc will
+  treat it as a token.
+
+- calls to other parsing functions, including appropriate lists of
+  argument values.  Again, if we want to save the result that is
+  produced in a variable v, then we can just prefix the call with "v=".
+
+- sequences of items, so that the programmer can indicate when one item
+  should follow another.
+
+- alternatives, separated by vertical bar symbols, to indicate places
+  where an input might be parsed in one of several different ways.
+
+- parenthesised sections of code so that the programmer can express
+  correct grouping.
+
+- repeatable sections of code, indicated by a trailing * (just as you
+  would expect in a regular expression) that can be executed zero or
+  more times, or by a trailing + (again, as in regular expression
+  notation) that can be executed one or more times.
+
+- optional sections of code, indicated by surrounding them with square
+  brackets, as in [ ... ], that will only be executed if they match the
+  provided input.
+
+- "semantic actions", which are pieces of Java code, surrounded by braces,
+  that we want the parsing function to execute.
+
+That's a lot to take in.  But some simple examples might help.  For
+example, at the top level, our parser can be described by the following
+parsing function:
+
+  int Top() : { int n; } {       // Top -> 
+    n=E() <EOF> { return n; }    //       E <EOF>
+  }
+
+This just says: parse an expression using E, call the result n, check
+that the next token is EOF, and return n as our final result.  In a
+similar way, the code for parsing a single integer, corresponding to I
+in the previous grammar, is just:
+
+  int I() : { Token t; } {        // I ->
+    t=<INTLIT>                    //     <INTLIT>
+    { return Integer.parseInt(t.image); }
+  }
+
+This just says to expect a single INTLIT token, saving a reference to
+the associated Token object in the variable t so that we can grab its
+image and then use Integer.parseInt() to find the associated int value.
+
+The parsing function for atomic expressions is as follows:
+
+  int A() : { int n; } {          // A ->
+    ( "(" n=E() ")"               //    "(" E ")"
+    | n=I())                      //  | I
+    { return n; }
+  }
+
+Here we have an alternative.  One possibility is that we see an opening
+"(", followed by an expression, and then a closing ")".  The other
+option is that we have a simple integer literal, with a value returned
+by I().  In either of these cases, the appropriate value is saved in the
+local variable n and then returned by the semantic action at the end as
+the meaning of the atomic expression that has just been read.
+
+As the comments in each of the above examples illustrate, if you erase
+the semantic actions, variable references, and a few other small
+details, then what remains is essentially just the original grammar for
+the appropriate nonterminal.
+
+Alas, we run in to a problem when we get to the E and P nonterminals.
+It is essentially the same problem in each case, so we will only discuss
+the simpler of the two:
+
+  int P() : { int n, m; } {                // P ->
+      n=A()           { return n; }        //    A
+    | n=P() "*" m=A() { return n * m; }    //  | P "*" A
+  }
+
+The problem here is that a parser based on this code needs to choose
+which of the two alternatives it should follow.  By default, however, a
+javacc parser is required to make this decision without looking at
+anything beyond the next token in the input stream.  And in this case,
+because the "(" and <INTLIT> tokens can appear at the beginning of both
+an A (for the first production) and a P (for the second), there is no
+way for the parser to choose which option it should follow.  And even if
+there was some way for the parser to make the decision, in this
+particular example, choosing to take the second alternative would cause
+P() to call itself without consuming any input tokens, resulting in an
+infinite loop.  This problem is reported as an instance of "left
+recursion" and javacc refuses to produce a parser for us:
+
+  $ javacc Example.jj 
+  Java Compiler Compiler Version 5.0 (Parser Generator)
+  (type "javacc" with no arguments for help)
+  Reading from file Example.jj . . .
+  Error: Line 31, Column 1: Left recursion detected: "P... --> P..."
+  Error: Line 25, Column 1: Left recursion detected: "E... --> E..."
+  Detected 2 errors and 0 warnings.
+  $
+
+But let's not be too discouraged.  What javacc is complaining about here
+is a property of the *grammar* that we are using, and not the *language*
+that we are trying to describe.  Perhaps there is another way to give a
+grammar for this language that avoids these problems?
+
+------------------------------------------------------------------------
+16 Factoring the grammar to avoid left recursion
+
+Consider again the previous (left recursive) grammar for P:
+
+  P -> A | P "*" A
+
+Intuitively, this just tells us that a product, P, is made up from a
+sequence of atoms, A, each separated from its predecessor by a "*"
+symbol.  So another way to describe the same language is to replace the
+productions for P above with the following:
+
+  P -> A ("*" A)*
+
+The ("*" A)* part of this production is a convenient way of indicating
+"zero or more occurrences of a * symbol followed by something that
+matches A".  Fortunately, javacc allows us to use this notation
+directly, and now we can rewrite our earlier parsing function for P as
+follows:
+
+  int P() : { int n, m; } {            // P ->
+     n=A() ("*" m=A() { n = n*m; })*   //    A ("*" A)*
+     { return n; }
+  }
+
+This eliminates the left recursion problem and requires only a very
+simple parsing strategy: read an initial atom, saving the result in n;
+then for as long as the next token is a "*", find the value, m, of the
+atom that comes after that, multiply n by m, and repeat.  When all is
+done, the final result will be in the variable n, which is returned by
+the final action at the end of the definition.
+
+In a similar way, the grammar for E can be rewritten as:
+
+  E -> P ( "+" P | "-" P )*
+
+(a sequence of products, with either a "+" or "-" symbol between each
+one) and this leads us to the following parsing function:
+
+  int E() : { int n, m; } {
+    n=P() ( ("+" m=P() { n = n+m; })
+          | ("-" m=P() { n = n-m; }))*
+    { return n; }
+  }
+
+Now javacc compiles our parser without complaint, and it works just fine
+too!
+
+[Aside: In fact, going back to the comments that we made in Example 13,
+we had already observed that the structure of our handwritten, recursive
+descent parsing code was actually a closer match for the descriptions of
+P and E that we've reintroduced in this step than the grammar that we
+used in the previous step.  This may help to explain why we didn't have
+to worry about left recursion or similar problems in our handwritten
+parsing code.]
+
+------------------------------------------------------------------------
+17 Syntax checking only, without evaluating expressions ...
+
+If we turn all the parsing functions in to void methods and delete all
+the semantic actions, local variables, and assignments, we end up with a
+barebones parser that doesn't contain much more than just the bare
+grammar (apart from a colon and some additional pairs of braces and
+parentheses):
+
+  void Top() : { } { E() <EOF>                     }
+  void E()   : { } { P() ( ("+" P()) | ("-" P()))* }
+  void P()   : { } { A() ("*" A())*                }
+  void A()   : { } { "(" E() ")"  |  I()           }    
+  void I()   : { } { <INTLIT>                      }
+
+The resulting parser doesn't do very much now, but the program will
+still run, and the parser will either succeed (indicating that the input
+is valid, matching the rules of the grammar) or else it will fail
+(indicating that the input does not match the grammar).
+
+In other words, this technique provides us with a fairly quick way to
+build a syntax checking tool.  In practice, it is quite common to start
+a javacc project in this way, focusing on getting the grammar right---in
+a way that will even let you test the parser on sample inputs---before
+adding all of the semantic action details into the mix.
+
+------------------------------------------------------------------------
+18 Building abstract syntax trees.
+
+Now we'll go back to the code from Step 16 and rewrite the semantic
+actions in our parsers to produce abstract syntax trees instead of
+calculating integer results directly.
+
+We won't worry about the precise details of how abstract syntax trees
+are represented just yet: that's really a topic for a future lab
+session, although you can get a preview by looking at the code in
+Ast.java.  A high-level view, focusing on the Java syntax that we use to
+construct these trees, is as follows:
+
+- Every abstract syntax tree will be represented by a value of type Expr.
+  For example, we will use Expr as the return type for any parsing
+  function that constructs an abstract syntax tree.
+
+- We can build an abstract syntax tree representing a simple integer
+  literal expression containing the number i using: new IntExpr(i)
+
+- If l and r are abstract syntax trees, then we can build new abstract
+  syntax trees representing the sum, difference, and product of l and r
+  using: new AddExpr(l,r), new SubExpr(l,r), and new MulExpr(l,r),
+  respectively.
+
+For example, we *could* build an abstract syntax tree for the expression
+1 + 2 * 3 by evaluating the following expression in a Java program.
+
+  new AddExpr(new IntExpr(1),
+              new MulExpr(new IntExpr(2),
+                          new IntExpr(3)))
+
+But we won't need to do this kind of thing by hand here because we have
+a parser to do it for us!  Specifically, we start by modifying the code
+for the parsing functions from Step 16 so that each of the local
+variables that previously stored an "int" now holds an "Expr",
+corresponding to an abstract syntax tree fragment.  In addition, we need
+to update each of the places in the previous actions that used
+operations on "int" values with the corresponding operations on "Expr"
+trees.  For example, the action:
+
+  { n = n*m; }
+
+that we used to describe the semantics of a multiply should now be
+replaced with:
+
+  { n = new MulExpr(n, m); }
+
+The full set of changes can be seen by looking at the grammar rules in
+Example.jj.
+
+The classes in Ast.java also define a simple eval() function that we can
+use to find the value of an expression from its abstract syntax tree.
+But what if we wanted to see the abstract syntax tree itself?
+
+------------------------------------------------------------------------
+19 Building and displaying abstract syntax trees.
+
+This step adds some more code to Ast.java that allows us to take a
+closer look at the generated abstract syntax trees, either by printing
+textual descriptions that use indentation to show structure, or by
+generating descriptions of the tree structures that can be visualized
+using the AT&T GraphViz tools like dot (see http://www.graphviz.org).
+The inner details of how these tools work is not relevant here, but as
+a very quick primer:
+
+  $ echo "1+2+3+4*5*6" | java Example
+  Abstract syntax tree is:
+  Add
+    Add
+      Add
+        1
+        2
+      3
+    Mul
+      Mul
+        4
+        5
+      6
+  $ dot -Tpdf ast.dot > ast.pdf
+  $
+
+As this transcript suggests, the indented description of the abstract
+syntax tree is displayed on the console as soon as parsing completes.
+The dot format description is written to a file "ast.dot", which can be
+converted into a graphical format like pdf using the command shown
+above.
+
+------------------------------------------------------------------------
+20 Changing the grammar so that operators group to the right.
+
+One benefit of writing parsers in this way is that we can often change
+the grammar in useful ways without having to rewrite all of the parsing
+code; javacc takes care of this for us.  For example, if we wanted to
+go back to treating the +, -, and * operators as grouping to the right,
+we could use a grammar of the following form:
+
+  E -> P [ "+" E | "-" E ]
+  P -> A [ "*" P ]
+
+Changing the definitions of the parsing functions E() and P() in the
+corresponding way makes it easy to produce the required parser.  (It
+helps that there are no left recursion issues to worry about this time!)
+
+For example, compare the following with the output that we saw for the
+same expression in the previous step:
+
+  $ echo "1+2+3+4*5*6" | java Example
+  Abstract syntax tree is:
+  Add
+    1
+    Add
+      2
+      Add
+        3
+        Mul
+          4
+          Mul
+            5
+            6
+  $
+
+------------------------------------------------------------------------
+21 Looking ahead ... (pun intended)
+
+We'll end this tour with a preview of a technical topic that we'll be
+looking at in more detail later on in lectures: lookahead.
+
+In this final step, we've extended our abstract syntax to allow
+variables, include variable references and assignments.  This will allow
+us to write expressions like the following:
+
+   i = j = 0
+
+or:
+
+   (i = x * 2) + (j = y * 3)
+
+both of which compute integer results but would also have a side-effect
+of assigning values to each of the variables i and j.
+
+The version of Example.jj in this step adds a new IDENT token for
+identifiers and extends the previous grammar with a new nonterminal, S,
+whose name is chosen because it corresponds to "sums" in the same way
+that P corresponds to "products".  Of course, the grammar also adds new
+rules for variable references and assignments, the latter of which shows
+up in the following parsing function:
+
+  Expr E() : { Expr n; Token t; } {
+    t=<IDENT> "=" n=E() { return new AssignExpr(t.image, n); }
+  | n=S()               { return n; }
+  }
+
+The problem here is that, if the first token in the input stream is an
+identifier, then there is no way for the parser to decide which of the
+two alternatives is should choose without looking beyond that initial
+<IDENT> token: it is clear already that the first production can begin
+with an IDENT, but it turns out that an S can also begin with an IDENT
+(in an expression of the form x + 1, for example), and so there is a
+conflict.  Although it still generates a parser in this case, javacc
+detects the potential problem and reports it with the following warning
+message:
+
+  Warning: Choice conflict involving two expansions at
+           line 27, column 3 and line 28, column 3 respectively.
+           A common prefix is: <IDENT>
+           Consider using a lookahead of 2 for earlier expansion.
+
+The generated parser works as expected on expressions like "1 + 2 * 3",
+"1 + x", or "x = 1", but it fails with expressions like "x + 1",
+indicating that the parser was expecting a "=" token.
+
+What is happening here?  When the parser begins the code for E() and
+sees an identifier at the front of the token stream, it does not have a
+way to choose between the two alternatives: on the basis of the
+information that it is using, either one could apply.  And so, as a
+default behavior, it picks the first rule, which treats the input as an
+assignment.  This works just fine for assignments like "x = 1" but fails
+for non-assignments like "x + 1".
+
+This is where the ability to look ahead in the token stream, as we first
+saw in Step 05, becomes useful.  In the specific case described here, if
+the parsing code in E() were able to look just one token beyond the
+identifier at the front of the token stream, then it would always have
+enough information to make a good choice between the two alternatives:
+specifically, the rule for assignments should only be used if the
+"lookahead" token is a "=" symbol.
+
+As the last line in the warning message suggests, we can guide javacc to
+make use of additional lookahead information.  In this specific case,
+all that is necessary is to modify the parsing function P() with a
+simple LOOKAHEAD(2) annotation, right before the point where it has to
+choose between the two alternatives:
+
+  Expr E() : { Expr n; Token t; } {
+    LOOKAHEAD(2)
+    t=<IDENT> "=" n=E() { return new AssignExpr(t.image, n); }
+  | n=S()               { return n; }
+  }
+
+Behind the scenes, javacc does some analysis to determine that the
+choice between the two rules can now be resolved by looking, not only at
+the current token (as it would with LOOKAHEAD(1), the default), but also
+at the token after that.  Using that information, it produces some extra
+code in the parsing function and leaves us with a parser that works as
+we would expect.  You can demonstrate this, for example, by running the
+following commands:
+
+  echo "i = j = 0"                 | java Example
+  echo "(i = 2 * x) + (j = 3 * y)" | java Example
+  echo "(i = x * 2) + (j = y * 3)" | java Example
+
+But exactly what kinds of analysis is javacc doing here?  Well we want
+to keep you coming back, so that will be a topic for another day ... :-)
+
+------------------------------------------------------------------------

@@ -1,0 +1,64 @@
+// 16 Factoring the grammar to avoid left recursion
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+      new Example(System.in);  // Read from standard input
+      int n = Top();
+      System.out.println("Result is: " + n);
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the grammatical rules of the input language: ---------------------
+
+int Top() : { int n; } {
+  n=E() <EOF> { return n; }
+}
+
+int E() : { int n, m; } {
+  n=P() ( ("+" m=P() { n = n+m; })
+        | ("-" m=P() { n = n-m; }))*
+  { return n; }
+}
+
+int P() : { int n, m; } {
+   n=A() ("*" m=A() { n = n*m; })*
+   { return n; }
+}
+
+int A() : { int n; } {
+  ( "(" n=E() ")"
+  | n=I())
+  { return n; }
+}
+
+int I() : { Token t; } {
+  t=<INTLIT>
+  { return Integer.parseInt(t.image); }
+}
+
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}

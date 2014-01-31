@@ -1,0 +1,44 @@
+// 17 Syntax checking only, without evaluating expressions ...
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+      new Example(System.in);  // Read from standard input
+      Top();
+      System.out.println("Input syntax is valid");
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the grammatical rules of the input language: ---------------------
+
+void Top() : { } { E() <EOF>                     } 
+void E()   : { } { P() ( ("+" P()) | ("-" P()))* }
+void P()   : { } { A() ("*" A())*                }
+void A()   : { } { "(" E() ")"  |  I()           }
+void I()   : { } { <INTLIT>                      }
+
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}

@@ -1,0 +1,51 @@
+// 03 As with jflex: A javacc lexer will use whichever token description
+//    allows it to match the largest number of characters (i.e., the rule
+//    of the longest lexeme).  But if two rules match the same number of
+//    characters, then priority is given to whichever rule appears first
+//    in the .jj file.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+    new Example(System.in);  // Read from standard input
+    while (getNextToken().kind!=EOF) {
+      System.out.println("Token kind is " + token.kind +
+                         ", image is " + token.image);
+    }
+    System.out.println("Last token has been read");
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}
+
+TOKEN : {
+  <KEYWORD : "while" | "print" | "if" | "else" | "for" | "var">
+}
+
+TOKEN : {
+  <IDENT:   <LETTER> (<LETTER> | <DIGIT>)*>
+| <#LETTER: ["A"-"Z","a"-"z","_"]>
+}

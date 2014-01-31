@@ -1,0 +1,40 @@
+// 06 Read a sequence of integer values and print out the square of each
+//    one, demonstrating that we've made the switch from reading strings
+//    of characters to figuring out what numbers those characters represent.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+    new Example(System.in);  // Read from standard input
+    while (getNextToken().kind==INTLIT) {
+        // Find the numeric value of this integer literal:
+        int n = Integer.parseInt(token.image);
+        System.out.println(n + " squared is " + (n*n));
+    }
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Use this script to run make in each of the subdirectories.  For
+# example, to build the default target in each directory, use:
+#
+#   ./makeall
+#
+# To run the clean target in each directory, use:
+#
+#   ./makeall clean
+#
+
+for ver in ??
+do
+  echo "Version" ${ver}:
+  make -C ${ver} $*
+done
+

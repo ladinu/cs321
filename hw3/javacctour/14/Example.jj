@@ -1,0 +1,117 @@
+// 14 Adding parentheses so that users can control the order in which
+//    operations are performed.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+      new Example(System.in);  // Read from standard input
+      getNextToken();          // Read the first token
+      int n = readExpr();
+      checkEOF();
+      System.out.println("Result is: " + n);
+  }
+
+  // Read a simple arithmetic expression from the input stream:
+  public static int readExpr() {
+      int n = readProduct(); // Read the first product
+      for (;;) {             // Then look for + or - operators
+          if (token.kind==ADD) {
+              getNextToken();
+              n = n + readProduct();
+          } else if (token.kind==SUB) {
+              getNextToken();
+              n = n - readProduct();
+          } else {
+              return n;
+          }
+      }
+  }
+
+  // Read a product, consisting of sequence of 1 or more integers
+  // separated by * symbols.
+  public static int readProduct() {
+      int n = readAtom(); // Read the first integer
+      for (;;) {          // Then look for operators
+          if (token.kind==MUL) {
+              getNextToken();
+              n = n * readAtom();
+          } else {
+              return n;
+          }
+      }
+  }
+
+  // Read an atomic expression, which is either a single integer literal
+  // or a parenthesized expression.
+  public static int readAtom() {
+      if (token.kind==INTLIT) {
+          int n = Integer.parseInt(token.image);
+          getNextToken();
+          return n;
+      } else if (token.kind==OPEN) {
+          getNextToken();
+          int n = readExpr();
+          if (token.kind==CLOSE) {
+              getNextToken();
+          } else {
+              parserFails("missing closing parenthesis");
+          }
+          return n;
+      } else {
+          parserFails("missing integer literal");
+          return 0; // not reached
+      }
+  }
+
+  // Check that we have reached the end of the input, consuming
+  // all tokens.
+  public static void checkEOF() {
+      if (token.kind!=EOF) {
+          parserFails("unused tokens (\"" + token.image + " ...\") in input");
+      }
+  }
+
+  // A simple mechanism for reporting a syntax error and aborting:
+  public static void parserFails(String msg) {
+      System.err.println("Syntax error (line "
+                         + token.beginLine
+                         + ", column "
+                         + token.beginColumn
+                         + "): "
+                         + msg);
+      System.exit(1);
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}
+
+TOKEN : {
+  <ADD   : "+">
+| <SUB   : "-">
+| <MUL   : "*">
+| <OPEN  : "(">
+| <CLOSE : ")">
+}

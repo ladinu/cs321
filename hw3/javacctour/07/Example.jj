@@ -1,0 +1,38 @@
+// 07 Reading a sequence of numbers and calculating their sum.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+    new Example(System.in);  // Read from standard input
+    int total = 0;
+    while (getNextToken().kind==INTLIT) {
+        total += Integer.parseInt(token.image);
+    }
+    System.out.println("Total: " + total);
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>                 // <<<<
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">        // <<<<
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}

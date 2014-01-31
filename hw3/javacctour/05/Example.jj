@@ -1,0 +1,82 @@
+// 05 We can "look ahead" to see what tokens will appear later in the
+//    token stream without loosing track of earlier tokens.  All of the
+//    future tokens that are read in this process are connected to the
+//    current token in a linked list using the "next" fields of each
+//    object to point to the next token.
+//
+//    The purpose of the code in this file is to give a sense of what
+//    is possible.  In practice, parsers often try to avoid reading
+//    ahead in the token stream ... but, sometimes, as we'll see later,
+//    peeking one or two tokens in to the future can provide useful
+//    information about an input should be parsed.
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+    new Example(System.in);  // Read from standard input
+    getNextToken();          // Read the first token
+
+    // Scan ahead to count all of the tokens in the input
+    int numTokens = 0;
+    while (getToken(numTokens).kind!=EOF) {
+      numTokens++;
+    }
+    System.out.println("There are " + numTokens + " tokens in the input");
+
+    // But we still haven't moved past the first token, so now we
+    // can traverse through the list, printing them out as we go:
+    while (token.kind!=EOF) {
+      System.out.println(describe(token.next)
+                         + " comes after "
+                         + describe(token));
+      getNextToken();
+    }
+  }
+
+  static String describe(Token t) {
+    switch (t.kind) {
+      case INTLIT  : return "INTLIT(" + t.image + ")";
+      case KEYWORD : return "KEYWORD(" + t.image + ")";
+      case IDENT   : return "IDENT(" + t.image + ")";
+      case EOF     : return "EOF";
+      default      : return "UNKNOWN(" + t.kind + "," + t.image + ")";
+    }
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT    : <ZERO> | <POSDIGIT> (<DIGIT>)*>
+| <#POSDIGIT : ["1"-"9"]>
+| <#ZERO     : "0">
+| <#DIGIT    : <ZERO> | <POSDIGIT> >
+}
+
+TOKEN : {
+  <KEYWORD : "while" | "print" | "if" | "else" | "for" | "var">
+| <COMMA   : ",">
+| <OPEN    : "(">
+| <CLOSE   : ")">
+}
+
+TOKEN : {
+  <IDENT:   <LETTER> (<LETTER> | <DIGIT>)*>
+| <#LETTER: ["A"-"Z","a"-"z","_"]>
+}

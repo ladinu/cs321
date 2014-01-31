@@ -1,0 +1,38 @@
+// 01 The SKIP section, and a demonstration using more complex
+//    regular expressions to match comments
+
+//-- Define a program that consumes tokens: ----------------------------------
+
+PARSER_BEGIN(Example)
+
+public class Example {
+  public static void main(String args[]) throws ParseException {
+    new Example(System.in);  // Read from standard input
+    while (getNextToken().kind!=EOF) {
+      System.out.println("Token kind is " + token.kind +
+                         ", image is " + token.image);
+    }
+    System.out.println("Last token has been read");
+  }
+}
+
+PARSER_END(Example)
+
+//-- Define the lexical structure of an input language: ----------------------
+
+// Input elements that should be ignored/skipped:
+SKIP : {
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>                 // <<<<
+| <"/*" (~["*"])* ("*" | ~["*","/"] (~["*"])* "*")* "/">        // <<<<
+}
+
+// Lexemes that should be reported as valid tokens:
+TOKEN : {
+  <INTLIT : "0" | ["1"-"9"] (["0"-"9"])*>
+//| <MULT   : "*">
+//| <DIV    : "/">
+}
