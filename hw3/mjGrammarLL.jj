@@ -236,42 +236,43 @@ void Args(): {}
   Expr() ("," Expr())*
 }
 
+
 void Expr(): {}
 {
-  Expr_1() "||" Expr_1()
-| ExtId() "(" [Args()] ")"
-| ExtId() "[" Expr() "]"
-| ExtId()
+  Expr_1() ("||" Expr_1())*
 }
 
 void Expr_1(): {}
 {
-  Expr_2() "&&" Expr_2()
+  Expr_2() ("&&" Expr_2())*
 }
 
 void Expr_2(): {}
 {
-  Expr_3() CompOp() Expr_3()
+  Expr_3() (CompOp() Expr_3())*
 }
 
 void Expr_3(): {}
 {
-  Expr_4() ("+" | "-") Expr_4()
+  Expr_4() (("+" | "-") Expr_4())*
 }
 
 void Expr_4(): {}
 {
-  Expr_5() ("*" | "/") Expr_5()
+  Expr_5() (("*" | "/") Expr_5())*
 }
 
 void Expr_5(): {}
 {
-  ("-" | "!") Expr_6()
+  ("-" | "!")* Expr_6()
 }
 
 void Expr_6(): {}
 {
   "(" Expr_6() ")"
+| ExtId() "(" [Args()] ")"
+| ExtId() "[" Expr() "]"
+| ExtId()
 | <IntLit>
 | <BoolLit>
 }
@@ -280,32 +281,10 @@ void Expr_6(): {}
 //
 void ExtId(): {}
 {
-  ["this" "."] T()
-}
-
-void T(): {}
-{
-  <Id> "." T() 
-| <Id>
-}
-
-// BinOp -> "+" | "-" | "*" | "/" | "&&" | "||" 
-//       |  "==" | "!=" | "<" | "<=" | ">" | ">=" 
-//
-void BinOp(): {}
-{
-  "+"  | "-"  | "*" | "/"  | "&&" | "||" 
-| "==" | "!=" | "<" | "<=" | ">"  | ">=" 
+  ["this" "."] <Id> ("." <Id>)*
 }
 
 void CompOp(): {}
 {
   "==" | "!=" | "<" | "<=" | ">"  | ">=" 
-}
-
-// UnOp -> "-" | "!"
-//
-void UnOp(): {}
-{
-  "-" | "!"
 }
