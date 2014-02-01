@@ -19,7 +19,7 @@ public class mjGrammarLL {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	new mjGrammarLL(stream).Program();
+	new mjGrammarLL(stream).Expr();
 	stream.close();
 	System.out.println("Program's syntax is valid.");
       } else {
@@ -117,129 +117,161 @@ TOKEN : /* Id */
 
 // Program -> {ClassDecl}
 //
-void Program(): {}
-{
-  (ClassDecl())* <EOF>
-}
-
-// ClassDecl -> "class" <Id> ["extends" <Id>] "{" {VarDecl} {MethodDecl} "}"
+//void Program(): {}
+//{
+//  (ClassDecl())* <EOF>
+//}
 //
-void ClassDecl(): {}
-{
-  "class" <Id> ["extends" <Id>] "{" (VarDecl())* (MethodDecl())* "}"
-}
-
-// MethodDecl -> "public" ExtType <Id> "(" [Formals] ")" 
-//                 "{" {VarDecl} {Stmt} "}"
-//            |  "public" "static" "void" "main" "(" "String" "[" "]" <Id> ")"
-//                 "{" {VarDecl} {Stmt} "}" 
+//// ClassDecl -> "class" <Id> ["extends" <Id>] "{" {VarDecl} {MethodDecl} "}"
+////
+//void ClassDecl(): {}
+//{
+//  "class" <Id> ["extends" <Id>] "{" (VarDecl())* (MethodDecl())* "}"
+//}
 //
-void MethodDecl(): {} 
-{
-  "public" ExtType() <Id> "(" [Formals()] ")" 
-          "{" (VarDecl())* (Stmt())* "}"
-| "public" "static" "void" "main" "(" "String" "[" "]" <Id> ")"
-          "{" (VarDecl())* (Stmt())* "}"
-}
-
-// Formals -> Type <Id> {"," Type <Id>}
+//// MethodDecl -> "public" ExtType <Id> "(" [Formals] ")" 
+////                 "{" {VarDecl} {Stmt} "}"
+////            |  "public" "static" "void" "main" "(" "String" "[" "]" <Id> ")"
+////                 "{" {VarDecl} {Stmt} "}" 
+////
+//void MethodDecl(): {} 
+//{
+//  "public" (ExtType() <Id> "(" [Formals()] ")" 
+//          "{" (VarDecl())* (Stmt())* "}"
+//|  "static" "void" "main" "(" "String" "[" "]" <Id> ")"
+//          "{" (VarDecl())* (Stmt())* "}")
+//}
 //
-void Formals(): {} 
-{
-  Type() <Id> ("," Type() <Id>)*
-}
-
-// VarDecl -> Type <Id> ["=" InitExpr] ";"
-//  
-void VarDecl(): {}
-{
-  Type() <Id> ["=" InitExpr()] ";"
-}
-
-// ExtType -> "void" | Type
 //
-void ExtType(): {}
-{
-  "void" | Type()
-}
-
-// Type -> BasicType ["[" "]"] 
-//      |  <Id>
+//// Formals -> Type <Id> {"," Type <Id>}
+////
+//void Formals(): {} 
+//{
+//  Type() <Id> ("," Type() <Id>)*
+//}
 //
-void Type(): {}
-{
-  BasicType() ["[" "]"] 
-| <Id>
-}
-
-// BasicType -> "int" | "boolean"
+//// VarDecl -> Type <Id> ["=" InitExpr] ";"
+////  
+//void VarDecl(): {}
+//{
+//  Type() <Id> ["=" InitExpr()] ";"
+//}
 //
-void BasicType(): {}
-{
-  "int" | "boolean"
-}
-
-// Stmt -> "{" {Stmt} "}"
-//      |  ExtId "(" [Args] ")" ";"
-//      |  ExtId ["[" Expr "]"] "=" InitExpr ";"
-//      |  "if" "(" Expr ")" Stmt ["else" Stmt]
-//      |  "while" "(" Expr ")" Stmt
-//      |  "System.out.println" "(" [PrintArg] ")" ";"
-//      |  "return" [Expr] ";"
+//// ExtType -> "void" | Type
+////
+//void ExtType(): {}
+//{
+//  "void"
+//| "boolean" ["[" "]"]
+//| <Id>
+//}
 //
-void Stmt(): {}
-{
-  "{" (Stmt())* "}"
-| ExtId() "(" [Args()] ")" ";"
-| ExtId() ["[" Expr() "]"] "=" InitExpr() ";"
-| "if" "(" Expr() ")" Stmt() ["else" Stmt()]
-| "while" "(" Expr() ")" Stmt()
-| "System.out.println" "(" [PrintArg()] ")" ";"
-| "return" [Expr()] ";"
-}
-
-// Args -> Expr {"," Expr}
+//// Type -> BasicType ["[" "]"] 
+////      |  <Id>
+////
+//void Type(): {}
+//{
+//  "int" ["[" "]"]
+//| "boolean" ["[" "]"]
+//| <Id>
+//}
 //
+//// Stmt -> "{" {Stmt} "}"
+////      |  ExtId "(" [Args] ")" ";"
+////      |  ExtId ["[" Expr "]"] "=" InitExpr ";"
+////      |  "if" "(" Expr ")" Stmt ["else" Stmt]
+////      |  "while" "(" Expr ")" Stmt
+////      |  "System.out.println" "(" [PrintArg] ")" ";"
+////      |  "return" [Expr] ";"
+////
+//void Stmt(): {}
+//{
+//  "{" (Stmt())* "}"
+//| ExtId() ["(" [Args()] ")" ";" | ["[" Expr() "]"] "=" InitExpr() ";"]
+//| "if" "(" Expr() ")" Stmt() ["else" Stmt()]
+//| "while" "(" Expr() ")" Stmt()
+//| "System.out.println" "(" [PrintArg()] ")" ";"
+//| "return" [Expr()] ";"
+//}
+//
+//// Args -> Expr {"," Expr}
+////
+//void Args(): {}
+//{
+//  Expr() ("," Expr())*
+//}
+//
+//// PrintArg -> Expr | <StrLit>
+////
+//void PrintArg(): {}
+//{
+//  Expr() | <StrLit>
+//}
+//
+//// InitExpr -> "new" BasicType "[" <IntLit> "]" 
+////          |  "new" <Id> "(" [Args] ")"
+////          |  Expr 
+////
+//void InitExpr(): {}
+//{
+//  "new" ( "int"     "[" <IntLit> "]" |
+//          "boolean" "[" <IntLit> "]" |
+//          <Id>      "(" [Args()] ")"
+//        )
+//| Expr()
+//}
+//
+//// Expr -> Expr BinOp Expr 
+////      |  UnOp Expr
+////      |  ExtId "(" [Args] ")"
+////      |  ExtId "[" Expr "]"
+////      |  ExtId 
+////      |  "(" Expr ")" 
+////      |  <IntLit>
+////      |  <BoolLit>
+////
+
 void Args(): {}
 {
   Expr() ("," Expr())*
 }
 
-// PrintArg -> Expr | <StrLit>
-//
-void PrintArg(): {}
-{
-  Expr() | <StrLit>
-}
-
-// InitExpr -> "new" BasicType "[" <IntLit> "]" 
-//          |  "new" <Id> "(" [Args] ")"
-//          |  Expr 
-//
-void InitExpr(): {}
-{
-  "new" BasicType() "[" <IntLit> "]" 
-| "new" <Id> "(" [Args()] ")"
-| Expr()
-}
-
-// Expr -> Expr BinOp Expr 
-//      |  UnOp Expr
-//      |  ExtId "(" [Args] ")"
-//      |  ExtId "[" Expr "]"
-//      |  ExtId 
-//      |  "(" Expr ")" 
-//      |  <IntLit>
-//      |  <BoolLit>
-//
 void Expr(): {}
 {
-  Expr() BinOp() Expr() 
-| UnOp() Expr()
+  Expr_1() "||" Expr_1()
 | ExtId() "(" [Args()] ")"
 | ExtId() "[" Expr() "]"
 | ExtId()
-| "(" Expr() ")" 
+}
+
+void Expr_1(): {}
+{
+  Expr_2() "&&" Expr_2()
+}
+
+void Expr_2(): {}
+{
+  Expr_3() CompOp() Expr_3()
+}
+
+void Expr_3(): {}
+{
+  Expr_4() ("+" | "-") Expr_4()
+}
+
+void Expr_4(): {}
+{
+  Expr_5() ("*" | "/") Expr_5()
+}
+
+void Expr_5(): {}
+{
+  ("-" | "!") Expr_6()
+}
+
+void Expr_6(): {}
+{
+  "(" Expr_6() ")"
 | <IntLit>
 | <BoolLit>
 }
@@ -248,7 +280,13 @@ void Expr(): {}
 //
 void ExtId(): {}
 {
-  ["this" "."] <Id> ("." <Id>)*
+  ["this" "."] T()
+}
+
+void T(): {}
+{
+  <Id> "." T() 
+| <Id>
 }
 
 // BinOp -> "+" | "-" | "*" | "/" | "&&" | "||" 
@@ -258,6 +296,11 @@ void BinOp(): {}
 {
   "+"  | "-"  | "*" | "/"  | "&&" | "||" 
 | "==" | "!=" | "<" | "<=" | ">"  | ">=" 
+}
+
+void CompOp(): {}
+{
+  "==" | "!=" | "<" | "<=" | ">"  | ">=" 
 }
 
 // UnOp -> "-" | "!"
