@@ -269,10 +269,8 @@ void Expr_5(): {}
 
 void Expr_6(): {}
 {
-  "(" Expr_6() ")"
-| ExtId() "(" [Args()] ")"
-| ExtId() "[" Expr() "]"
-| ExtId()
+  "(" Expr() ")"
+| ExtId() [ "(" [Args()] ")" | "[" Expr() "]"  ]
 | <IntLit>
 | <BoolLit>
 }
@@ -281,7 +279,8 @@ void Expr_6(): {}
 //
 void ExtId(): {}
 {
-  ["this" "."] <Id> ("." <Id>)*
+  <Id> ("." <Id>)*
+| "this" "." <Id> ("." <Id>)*
 }
 
 void CompOp(): {}
