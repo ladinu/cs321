@@ -19,7 +19,7 @@ public class mjGrammarLL {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	new mjGrammarLL(stream).Program();
+	new mjGrammarLL(stream).Expr();
 	stream.close();
 	System.out.println("Program's syntax is valid.");
       } else {
@@ -69,7 +69,6 @@ TOKEN : /* Keywords */
 | <kwThis:    "this">
 | <kwVoid:    "void">         
 | <kwWhile:   "while">
-| <kwFoo:     "foo">
 | <#Digit:    ["0"-"9"]>
 | <#Letter:   (["A"-"Z"]|["a"-"z"])>
 }
@@ -118,122 +117,126 @@ TOKEN : /* Id */
 
 // Program -> {ClassDecl}
 //
-void Program(): {}
-{
-  (ClassDecl())* <EOF>
-}
-
-// ClassDecl -> "class" <Id> ["extends" <Id>] "{" {VarDecl} {MethodDecl} "}"
+//void Program(): {}
+//{
+//  (ClassDecl())* <EOF>
+//}
 //
-void ClassDecl(): {}
-{
-  "class" <Id> ["extends" <Id>] "{" (VarDecl())* (MethodDecl())* "}"
-}
-
-// MethodDecl -> "public" ExtType <Id> "(" [Formals] ")" 
-//                 "{" {VarDecl} {Stmt} "}"
-//            |  "public" "static" "void" "main" "(" "String" "[" "]" <Id> ")"
-//                 "{" {VarDecl} {Stmt} "}" 
+//// ClassDecl -> "class" <Id> ["extends" <Id>] "{" {VarDecl} {MethodDecl} "}"
+////
+//void ClassDecl(): {}
+//{
+//  "class" <Id> ["extends" <Id>] "{" (VarDecl())* (MethodDecl())* "}"
+//}
 //
-void MethodDecl(): {} 
-{
-  "public" MethodDecl_0() "{" (LOOKAHEAD(2) VarDecl())* (Stmt())* "}"
-}
-
-void MethodDecl_0(): {}
-{
-  ExtType() <Id> "(" [Formals()] ")" 
-| "static" "void" "main" "(" "String" "[" "]" <Id> ")"
-}
-
-// Formals -> Type <Id> {"," Type <Id>}
+//// MethodDecl -> "public" ExtType <Id> "(" [Formals] ")" 
+////                 "{" {VarDecl} {Stmt} "}"
+////            |  "public" "static" "void" "main" "(" "String" "[" "]" <Id> ")"
+////                 "{" {VarDecl} {Stmt} "}" 
+////
+//void MethodDecl(): {} 
+//{
+//  "public" (ExtType() <Id> "(" [Formals()] ")" 
+//          "{" (VarDecl())* (Stmt())* "}"
+//|  "static" "void" "main" "(" "String" "[" "]" <Id> ")"
+//          "{" (VarDecl())* (Stmt())* "}")
+//}
 //
-void Formals(): {} 
-{
-  Type() <Id> ("," Type() <Id>)*
-}
-
-// VarDecl -> Type <Id> ["=" InitExpr] ";"
-//  
-void VarDecl(): {}
-{
-  Type() <Id> ["=" InitExpr()] ";"
-}
-
-// ExtType -> "void" | Type
 //
-void ExtType(): {}
-{
-  "void" | Type()
-}
-
-// Type -> BasicType ["[" "]"] 
-//      |  <Id>
-
-void Type(): {}
-{
-  BasicType() ["[" "]"] 
-| <Id>
-}
-
-// BasicType -> "int" | "boolean"
+//// Formals -> Type <Id> {"," Type <Id>}
+////
+//void Formals(): {} 
+//{
+//  Type() <Id> ("," Type() <Id>)*
+//}
 //
-void BasicType(): {}
-{
-  "int" | "boolean"
-}
-
-// Stmt -> "{" {Stmt} "}"
-//      |  ExtId "(" [Args] ")" ";"
-//      |  ExtId ["[" Expr "]"] "=" InitExpr ";"
-//      |  "if" "(" Expr ")" Stmt ["else" Stmt]
-//      |  "while" "(" Expr ")" Stmt
-//      |  "System.out.println" "(" [PrintArg] ")" ";"
-//      |  "return" [Expr] ";"
+//// VarDecl -> Type <Id> ["=" InitExpr] ";"
+////  
+//void VarDecl(): {}
+//{
+//  Type() <Id> ["=" InitExpr()] ";"
+//}
 //
-void Stmt(): {}
-{
-  LOOKAHEAD(2)
-  "{" (Stmt())* "}"
-| ExtId() ("(" [Args()] ")" ";" | ["[" Expr() "]"] "=" InitExpr() ";")
-| "if" "(" Expr() ")" Stmt() ["else" Stmt()]
-| "while" "(" Expr() ")" Stmt()
-| "System.out.println" "(" [PrintArg()] ")" ";"
-}
-
-// Args -> Expr {"," Expr}
+//// ExtType -> "void" | Type
+////
+//void ExtType(): {}
+//{
+//  "void"
+//| "boolean" ["[" "]"]
+//| <Id>
+//}
 //
+//// Type -> BasicType ["[" "]"] 
+////      |  <Id>
+////
+//void Type(): {}
+//{
+//  "int" ["[" "]"]
+//| "boolean" ["[" "]"]
+//| <Id>
+//}
+//
+//// Stmt -> "{" {Stmt} "}"
+////      |  ExtId "(" [Args] ")" ";"
+////      |  ExtId ["[" Expr "]"] "=" InitExpr ";"
+////      |  "if" "(" Expr ")" Stmt ["else" Stmt]
+////      |  "while" "(" Expr ")" Stmt
+////      |  "System.out.println" "(" [PrintArg] ")" ";"
+////      |  "return" [Expr] ";"
+////
+//void Stmt(): {}
+//{
+//  "{" (Stmt())* "}"
+//| ExtId() ["(" [Args()] ")" ";" | ["[" Expr() "]"] "=" InitExpr() ";"]
+//| "if" "(" Expr() ")" Stmt() ["else" Stmt()]
+//| "while" "(" Expr() ")" Stmt()
+//| "System.out.println" "(" [PrintArg()] ")" ";"
+//| "return" [Expr()] ";"
+//}
+//
+//// Args -> Expr {"," Expr}
+////
+//void Args(): {}
+//{
+//  Expr() ("," Expr())*
+//}
+//
+//// PrintArg -> Expr | <StrLit>
+////
+//void PrintArg(): {}
+//{
+//  Expr() | <StrLit>
+//}
+//
+//// InitExpr -> "new" BasicType "[" <IntLit> "]" 
+////          |  "new" <Id> "(" [Args] ")"
+////          |  Expr 
+////
+//void InitExpr(): {}
+//{
+//  "new" ( "int"     "[" <IntLit> "]" |
+//          "boolean" "[" <IntLit> "]" |
+//          <Id>      "(" [Args()] ")"
+//        )
+//| Expr()
+//}
+//
+//// Expr -> Expr BinOp Expr 
+////      |  UnOp Expr
+////      |  ExtId "(" [Args] ")"
+////      |  ExtId "[" Expr "]"
+////      |  ExtId 
+////      |  "(" Expr ")" 
+////      |  <IntLit>
+////      |  <BoolLit>
+////
+
 void Args(): {}
 {
   Expr() ("," Expr())*
 }
 
-// PrintArg -> Expr | <StrLit>
-//
-void PrintArg(): {}
-{
-  Expr() | <StrLit>
-}
 
-// InitExpr -> "new" BasicType "[" <IntLit> "]" 
-//          |  "new" <Id> "(" [Args] ")"
-//          |  Expr 
-//
-void InitExpr(): {}
-{
-  "new" (BasicType() "[" <IntLit> "]" | <Id> "(" [Args()] ")")
-| Expr()
-}
-
-// Expr -> Expr BinOp Expr 
-//      |  UnOp Expr
-//      |  ExtId "(" [Args] ")"
-//      |  ExtId "[" Expr "]"
-//      |  ExtId 
-//      |  "(" Expr ")" 
-//      |  <IntLit>
-//      |  <BoolLit>
-//
 void Expr(): {}
 {
   Expr_1() ("||" Expr_1())*
@@ -283,20 +286,4 @@ void ExtId(): {}
 void CompOp(): {}
 {
   "==" | "!=" | "<" | "<=" | ">"  | ">=" 
-}
-
-// BinOp -> "+" | "-" | "*" | "/" | "&&" | "||" 
-//       |  "==" | "!=" | "<" | "<=" | ">" | ">=" 
-//
-void BinOp(): {}
-{
-  "+"  | "-"  | "*" | "/"  | "&&" | "||" 
-| "==" | "!=" | "<" | "<=" | ">"  | ">=" 
-}
-
-// UnOp -> "-" | "!"
-//
-void UnOp(): {}
-{
-  "-" | "!"
 }
