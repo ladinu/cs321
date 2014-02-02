@@ -69,7 +69,6 @@ TOKEN : /* Keywords */
 | <kwThis:    "this">
 | <kwVoid:    "void">         
 | <kwWhile:   "while">
-| <kwFoo:     "foo">
 | <#Digit:    ["0"-"9"]>
 | <#Letter:   (["A"-"Z"]|["a"-"z"])>
 }
@@ -193,7 +192,6 @@ void BasicType(): {}
 //
 void Stmt(): {}
 {
-  LOOKAHEAD(2)
   "{" (Stmt())* "}"
 | ExtId() ("(" [Args()] ")" ";" | ["[" Expr() "]"] "=" InitExpr() ";")
 | "if" "(" Expr() ")" Stmt() ["else" Stmt()]

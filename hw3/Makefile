@@ -32,5 +32,4 @@ clean:
 	rm mjGrammarLL*.class Parse*.* Simple*.* Token*.*
 	
 clean-hard:
-	rm mjGrammarLL*.class Parse*.* Simple*.* Token*.*
-	rm mjGrammarLL*.java Parse*.* Simple*.* Token*.*
+	rm *.java *.class
