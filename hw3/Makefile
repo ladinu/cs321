@@ -29,5 +29,8 @@ tt:
 	done;
 
 clean:
-	rm mjGrammarLL*.java mjGrammarLL*.class Parse*.* Simple*.* Token*.*
+	rm mjGrammarLL*.class Parse*.* Simple*.* Token*.*
 	
+clean-hard:
+	rm mjGrammarLL*.class Parse*.* Simple*.* Token*.*
+	rm mjGrammarLL*.java Parse*.* Simple*.* Token*.*
