@@ -3,6 +3,7 @@
 JFLAGS = -g
 JC = javac
 JCC = javacc
+DEBUG= -debug_parser
 
 .SUFFIXES: .jj .java .class
 
@@ -14,5 +15,19 @@ JCC = javacc
 
 all:	mjGrammarLL.class
 
+dd:
+	$(JCC) $(DEBUG) mjGrammarLL.jj
+	$(JC) *.java
+cc:
+	$(JCC) mjGrammarLL.jj
+	$(JC) *.java
+
+tt:
+	for file in $$(ls tst/test*.java); do \
+	   echo "####### Testing $$file ##########"; \
+	   java mjGrammarLL $$file; \
+	done;
+
 clean:
 	rm mjGrammarLL*.java mjGrammarLL*.class Parse*.* Simple*.* Token*.*
+	
