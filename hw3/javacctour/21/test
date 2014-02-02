@@ -1,2 +1,0 @@
-// Here is a simple expression
-(i = x * 2) + (j = y * 3)

@@ -1,4 +1,0 @@
-ParseException: Encountered " "static" "static "" at line 3, column 15.
-Was expecting:
-    <Id> ...
-    
