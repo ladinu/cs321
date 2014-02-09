@@ -4,3 +4,50 @@ Path through the compilers
 Jinke Li lecture has a lot of true/false (AST)
 Topdown/Bottom up parsing
 -------------------------------------------------------------------------------
+
+[ Definitions ]
+   
+   Semantics:
+      - The meaning of something. i.e the meaning of the input program
+        The structure of the program.
+   Syntax:
+      - The way in which a program is written (one dimentional char stream)
+
+[ Properties of Compiler ]
+   - Correctness (should produce valid output for valid input)
+      - Output should have the same semantic as the input
+   - Performance
+   - Diagnostics
+
+[ Interpertes vs Compilers ]
+   - Interpertes turn syntax into semantics
+   - Compiler turn syntax into syntax
+
+[ Compiler Pipeline ]
+
+   source input -> lexical analysis -> parser -> semantic analysis -> code gen
+   -> optimization
+
+   Source Input
+      - turn data from raw input into a sequence of chars or lines
+
+   Lexical Analysis
+      - Convert input stream of char into a stream of tokens 
+
+   Parser
+      - Buil data structures that capture the structure of the input program
+        (AST)
+      - Does error checking. i.e check if inputs are grammatically well-formed.
+        Reports syntax errors
+
+   Symantic Analysis
+      - Check that program is reasonable. i.e no references to unbound vars, no
+        type inconsistencies, scope ...
+
+   Code Generation
+      - Generate sequence of machine instructions as output (translated
+        material)
+      - Diffrent strategies are neede for dirret target machiens
+
+   Optimization
+      - Looks for oppertunaties to improve the quality of the output
