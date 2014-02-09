@@ -1,0 +1,6 @@
+touch up on DFA/CFG
+How to create tokens
+Path through the compilers
+Jinke Li lecture has a lot of true/false (AST)
+Topdown/Bottom up parsing
+-------------------------------------------------------------------------------
