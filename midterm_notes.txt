@@ -1,4 +1,6 @@
 touch up on DFA/CFG
+regExp -> DFA
+NFA -> DFA
 How to create tokens
 Path through the compilers
 Jinke Li lecture has a lot of true/false (AST)
@@ -12,6 +14,24 @@ Topdown/Bottom up parsing
         The structure of the program.
    Syntax:
       - The way in which a program is written (one dimentional char stream)
+        How things are communicated.
+
+   Concrete Syntax:
+      - Representation of a program in its text source form as a sequence of
+        bits/bytes/characters/lines
+
+   Abstract Syntax:
+      - The represntaiton of a program structure independent of written form
+
+   Lexeme:
+      - Particular sequence of characters that might appear together on an
+        input stream as the representation for a single entity
+
+   Token:
+      - A name for a set of lexemes
+
+   Pattern:
+      - A description of the way that lexemes are written 
 
 [ Properties of Compiler ]
    - Correctness (should produce valid output for valid input)
@@ -31,12 +51,54 @@ Topdown/Bottom up parsing
    Source Input
       - turn data from raw input into a sequence of chars or lines
 
+
    Lexical Analysis
       - Convert input stream of char into a stream of tokens 
 
+      - Tokens
+         - may have associated attributes i.e location (row/column) where
+           the particular token occur
+         - The attribute can be used for error reporting
+         - Atributes capture Properties of the lexeme by itself
+         - Can be represented by objects in a input stream. In practice
+           complilers do not buld token objects, but instead expect tokens to
+           be read in pices and on demand
+
+         - Examples of mini lexical analysis
+             // Read next token and return its code
+             int nextToken();
+            
+             // Return current token code
+             int getToken();
+
+             // Get the text (if any) of current lexeme
+             String getLexeme();
+
+             // Get position of the current token in source input
+             Position getPos();
+
+         - Example of recognizing identifiers
+
+            if isIdentifier(c) then
+               c = readNextInputChar()
+               while c != EOF and isPartOfIdentifer(c) do
+                  c = readNextInputChar()
+               end
+               
+               return token=IDENT        
+
+      - Buffering
+         - need to store chars that constitue a lexe untill we find the end
+
+         - We might not know that we've reached the end of a token untill we
+           resad the following char
+
+         - We might need to lookahead to see what tokens are coming next
+
+
    Parser
       - Buil data structures that capture the structure of the input program
-        (AST)
+        (AST) from the token stream
       - Does error checking. i.e check if inputs are grammatically well-formed.
         Reports syntax errors
 
