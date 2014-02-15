@@ -131,3 +131,12 @@ TOKEN : /* Id */
 // PARSER SECTION ---------------------------------------------------------------
 //
 
+Ast.BOP CompOp(): {}
+{
+   "==" { return Ast.BOP.EQ; }
+ | "!=" { return Ast.BOP.NE; }
+ | "<=" { return Ast.BOP.LE; }
+ | ">=" { return Ast.BOP.GE; }
+ | "<"  { return Ast.BOP.LT; }
+ | ">"  { return Ast.BOP.GT; }
+}
