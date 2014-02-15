@@ -1,0 +1,64 @@
+//---------------------------------------------------------
+// LL2 Grammar for the miniJava Language (W'14) - Jingke Li 
+//---------------------------------------------------------
+
+Program    -> {ClassDecl}
+
+ClassDecl  -> "class" <Id> ["extends" <Id>] "{" {VarDecl} {MethodDecl} "}"
+
+MethodDecl -> "public" ( ExtType <Id> "(" [Param {"," Param}] ")" 
+                       | "static" "void" "main" "(" "String" "[" "]" <Id> ")" )
+                "{" {VarDecl} {Stmt} "}"
+
+Param      -> Type <Id> 
+
+VarDecl    -> Type <Id> ["=" InitExpr] ";"
+
+ExtType    -> "void"
+           |  Type
+
+Type       -> BasicType ["[" "]"] 
+           |  <Id>
+
+BasicType  -> "int"
+           |  "boolean"
+
+Stmt       -> "{" {Stmt} "}"
+           |  ExtId ( ["[" Expr "]"] "=" InitExpr ";"
+                    | "(" [Args] ")" ";" )
+           |  "if" "(" Expr ")" Stmt ["else" Stmt]
+           |  "while" "(" Expr ")" Stmt
+           |  "System.out.println" "(" [PrintArg] ")" ";"
+           |  "return" [Expr] ";"
+
+Args       -> Expr {"," Expr}
+
+PrintArg   -> Expr 
+           |  <StrLit>
+
+InitExpr   -> "new" ( BasicType "[" <IntLit> "]" 
+                    | <Id> "(" [Args] ")" )
+           |  Expr 
+
+Expr       -> AndExpr {"||" AndExpr}
+
+AndExpr    -> RelExpr {"&&" RelExpr}
+
+RelExpr    -> ArithExpr {RelOp ArithExpr}
+
+ArithExpr  -> Term {("+"|"-") Term}
+
+Term       -> Factor {("*"|"/") Factor}
+
+Factor     -> UnOp Factor 
+           |  "(" Expr ")" 
+           |  ExtId ( ["[" Expr "]"]
+                    | "(" [Args] ")" )
+           |  <IntLit>
+           |  <BoolLit>
+
+ExtId      -> ["This" "."] <Id> {"." <Id>} 
+
+RelOp      -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
+
+UnOp       -> "-" | "!"

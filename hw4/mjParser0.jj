@@ -1,0 +1,133 @@
+// This is supporting software for CS321 Compilers and Language Design I
+// Copyright (c) Portland State University
+// 
+//----------------------------------------------------------------------
+// An starting program for miniJava Parser.
+//
+// For CS321 HW4, W'14
+//
+// Instructions:
+//
+// 1. Copy or rename this file to 'mjParser.jj'.
+// 2. Add parsing routines to the parser section (either copy from your 
+//    'mjGrammarLL.jj' program or convert from 'mjGrammarLL2.txt'.
+// 3. Insert semantic actions into the parsing routines.
+//----------------------------------------------------------------------
+//
+//
+
+// options { DEBUG_PARSER=true; }  /* Show debugging info */
+
+PARSER_BEGIN(mjParser)
+import java.util.*;
+import java.io.*;
+import ast.*;
+
+public class mjParser {
+  public static void main(String [] args) {
+    try {
+      if (args.length == 1) {
+	FileInputStream stream = new FileInputStream(args[0]);
+	Ast.Program p = new mjParser(stream).Program();
+	stream.close();
+	System.out.print(p);
+      } else {
+	System.out.print("Need a file name as command-line argument.\n");
+      }
+    } catch (TokenMgrError e) {
+      System.err.println(e);
+    } catch (Exception e) {
+      System.err.println(e);
+    }
+  }
+}
+PARSER_END(mjParser)
+
+//
+// LEXER SECTION ---------------------------------------------------------------
+//
+
+SKIP : /* White space */
+{
+  " " | "\t" | "\n" | "\r" | "\f"
+}
+
+SKIP : /* Comments */
+{
+  <SLComment:    "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <MLComment:    "/*" ( ~["*"] | (["*"])+ (~["/"]) )* (["*"])+ "/">
+| <Unterminated: "/*" ( ~["*"] | (["*"])+ (~["/"]) )* (["*"])+ >
+    { if (true) throw new TokenMgrError("Unterminated multi-line comments ", 0); }  
+}
+
+TOKEN : /* Keywords */
+{
+  <kwBoolean: "boolean">   
+| <kwClass:   "class">
+| <kwElse:    "else">
+| <kwExtends: "extends">
+| <kwIf:      "if">
+| <kwInt:     "int">
+| <kwMain:    "main">
+| <kwNew:     "new">
+| <kwPublic:  "public">
+| <kwReturn:  "return">
+| <kwStatic:  "static">
+| <kwString:  "String">
+| <kwPrint:   "System.out.println">
+| <kwThis:    "this">
+| <kwVoid:    "void">         
+| <kwWhile:   "while">
+| <#Digit:    ["0"-"9"]>
+| <#Letter:   (["A"-"Z"]|["a"-"z"])>
+}
+
+TOKEN : /* BoolLit */
+{
+  <BoolLit: "true"|"false">
+}
+
+TOKEN : /* IntLit */
+{
+  <IntLit: (<Digit>)+> 
+  { try { 
+      Integer.parseInt(matchedToken.image); 
+    } catch (Exception e) { 
+      throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+			      ", column " + matchedToken.beginColumn + 
+			      ". Integer overflow: " + matchedToken.image, 0);
+    } 
+  }
+}
+
+TOKEN : /* StrLit */
+{
+  <StrLit: ("\"" (~["\"","\n"])+ "\"")>
+  { if (matchedToken.image.length() > 257) 
+      throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+			      ", column " + matchedToken.beginColumn + 
+			      ". String length over 255: " + matchedToken.image, 0); 
+  }
+}
+
+TOKEN : /* Id */
+{
+  <Id: <Letter> (<Letter>|<Digit>|"_")*>
+  { if (matchedToken.image.length() > 255) 
+      throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+			      ", column " + matchedToken.beginColumn + 
+			      ". Id length over 255: " + matchedToken.image, 0);
+  }
+}
+
+// Operators and Delimiters are not explicitly defined:
+//
+// Operators:  "="|"+"|"-"|"*"|"/"|"&&"|"||"|"!"|"=="|"!="|"<"|"<="|">"|">="
+// Delimiters: ";"|","|"."|"("|")"|"["|"]"|"{"|"}"
+//
+
+
+//
+// PARSER SECTION ---------------------------------------------------------------
+//
+
