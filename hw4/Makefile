@@ -17,4 +17,5 @@ JCC = javacc
 parser: ast/Ast.class mjParser.class
 
 clean:	
-	rm ast/*.class *.class
+	rm -f ast/*.class *.class
+	rm -f *.java

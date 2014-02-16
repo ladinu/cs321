@@ -130,6 +130,138 @@ TOKEN : /* Id */
 //
 // PARSER SECTION ---------------------------------------------------------------
 //
+Ast.Program Program():
+{  List<Ast.ClassDecl> c1 = new ArrayList<Ast.ClassDecl>();
+   Ast.ClassDecl c;
+}
+{
+   ( c=ClassDecl() {cl.add(c);} )* <EOF>
+   { return new Ast.Program(cl); }
+}
+
+Ast.ClassDecl ClassDecl():
+{  String className;
+   String parentName = null;
+   List<Ast.VarDecl> variables  = new ArrayList<Ast.VarDecl>();
+   List<Ast.MethodDecl> methods = new ArrayList<Ast.MethodDecl>();
+   
+   Ast.VarDecl variable;
+   Ast.MethodDecl method;
+}
+{
+   "class" className=Id() ["extends" parentName=Id()] "{" 
+      (variable=VarDecl()   { variables.add(variable); })* 
+      (method=MethodDecl()  { methods.add(method);     })* 
+   "}"
+
+   { return new Ast.ClassDecl(className, parentName, variables, methods); }  
+}
+
+Ast.MethodDecl MethodDecl():
+{  Ast.Type type = null;
+   String methodName;
+   List<Ast.Param> params = new ArrayList<Ast.Param>();
+   List<Ast.VarDecl> variables = new ArrayList<Ast.VarDecl>();
+   List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
+
+   Ast.Param p;
+   Ast.VarDecl var;
+   Ast.Stmt stmt;
+}
+{
+   "public" ( type=ExtType() methodName=Id() "(" 
+              [p=Param() {params.add(p);} ("," p=Param() {params.add(p);})*] ")" |
+              "static" "void" "main" "(" 
+                  "String" "[" "]" p=Id() {params.add(p);} 
+               ")" )
+      "{" 
+         (var=VarDecl() {variables.add(var);})* 
+         (stmt=Stmt() {stmt.add(stmts);})*
+      "}"
+
+   { return new MethodDecl(type, methodName, params, variables, stmts); }
+}
+
+Ast.Param Param():
+{  Ast.Type type;
+   String name;
+}
+{  type=Type() name=Id()
+   { return new Ast.Param(type, name); }
+}
+
+Ast.VarDecl VarDecl():
+{  Ast.Type type;
+   String name;
+   Ast.Exp exp;
+}
+{  type=Type() id=Id() ["=" exp InitExpr] ";"
+   { return new Ast.VarDecl(type, name, exp); }  
+}
+
+Ast.Type ExtType():
+{  Ast.Type type; }
+{  "void" { type=null; } | type=Type()
+   { return type; }
+}
+
+Ast.Type Type():
+{  Ast.Type type; String typeId; }
+{  type=BasicType() [ "[" "]" {type = new Ast.ArrayList(type);}] |
+   typeId=Id() { typeId = new Ast.ObjType(typeId);}
+   { return type; }
+}
+
+Ast.Stmt Stmt():
+{  List<Ast.Block> blocks = new ArrayList<Ast.Block>();
+
+   Ast.Stmt stmt;
+   Ast.Stmt stmt0 = null;
+   Ast.Block block;
+   Ast.Assign assign;
+   Ast.CallStmt call;
+   Ast.If ifStmt;
+   Ast.While whileStmt;
+   Ast.Print print;
+   Ast.Return returnStmt;
+
+   String extId;
+   Ast.Exp exp1;
+   Ast.Exp exp2;
+   Ast.Exp exp0 = null;
+}
+{  "{" (block=Stmt() {blocks.add(block);})* "}" { return new Ast.Block(block); } |
+   "if" "(" exp1=Expr() ")" stmt=Stmt()  ["else" stmt0=Stmt()] {return new
+      Ast.If(exp1, stmt, stmt0)} |
+   "while" "(" exp1=Expr() ")" stmt=Stmt() {return new Ast.While(exp1, stmt)} |
+   "Systme.out.println" "("[exp0=PrintArg()] ")"  ";" {return new Ast.Print(exp0);}|
+   "return" [exp0=Expr()] ";" {return new Ast.Return(exp0);}
+   
+}
+
+Ast.
+
+Ast.Type BasicType():
+{  Ast.Type type; }
+{  type=(BoolType() | IntType() )
+   { return type; }
+}
+
+Ast.Id Id():
+{  Token token; }
+{
+   token=<Id> { return new Ast.Id(token.image); }
+}
+
+Ast.BoolType(): {}
+{
+   "boolean" { return new Ast.BoolType(); }
+}
+
+Ast.IntType(): {}
+{
+   "int" { return new Ast.IntType(); }
+}
 
 Ast.BOP CompOp(): {}
 {
