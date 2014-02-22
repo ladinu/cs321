@@ -28,7 +28,7 @@ public class mjParser {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	Ast.Exp p = new mjParser(stream).Program();
+	Ast.Stmt p = new mjParser(stream).Program();
 	stream.close();
 	System.out.println(p);
       } else {
@@ -131,20 +131,65 @@ TOKEN : /* Id */
 // PARSER SECTION ---------------------------------------------------------------
 //
 
-Ast.Exp Program():
+Ast.Stmt Program():
 {
-   Ast.Exp factor;
+   Ast.Stmt factor;
 }
 {
-   factor=PrintArg() <EOF>
+   factor=Stmt() <EOF>
    {return factor;}
 }
 
+Ast.Stmt Stmt():
+{  
+   List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
+   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+   Ast.Stmt stmt;
+   Ast.Stmt stmt0 = null;
+   Ast.Block block;
+   Ast.Assign assign;
+   Ast.CallStmt call;
+   Ast.If ifStmt;
+   Ast.While whileStmt;
+   Ast.Print print;
+   Ast.Return returnStmt;
+
+   Ast.Exp extId;
+   Ast.Id exp1Id;
+   Ast.Field exp1F;
+   Ast.Exp exp1;
+   Ast.Exp exp2;
+   Ast.Exp exp0 = null;
+}
+{  
+   "{" (stmt=Stmt() {stmts.add(stmt);})* "}" { return new Ast.Block(stmts); } |
+   exp1=ExtId() ( ["[" exp0=Expr() "]"] "=" exp2=InitExpr() ";" {
+
+                  if (exp0 == null) {
+                     return new Ast.Assign(exp1, exp2);
+                  } else {
+                     return new Ast.Assign( new Ast.ArrayElm(exp1, exp0), exp2 );
+                  }
+}|
+                  "(" [args=Args()] ")" ";" {
+                     if (exp1 instanceof Ast.Field) {
+                        exp1F = (Ast.Field)exp1;
+                        return new Ast.CallStmt(exp1F.obj, exp1F.nm, args);
+                     } else {
+                        exp1Id = (Ast.Id)exp1;
+                        return new Ast.CallStmt(new Ast.This(), exp1Id.nm, args);
+                     }
+} ) |
+   "if" "(" exp1=Expr() ")" stmt=Stmt()  ["else" stmt0=Stmt()] {return new
+      Ast.If(exp1, stmt, stmt0);} |
+   "while" "(" exp1=Expr() ")" stmt=Stmt() {return new Ast.While(exp1, stmt);} |
+   "System.out.println" "("[exp0=PrintArg()] ")"  ";" {return new Ast.Print(exp0);}|
+   "return" [exp0=Expr()] ";" {return new Ast.Return(exp0);}
+   
+}
 
 Ast.Exp PrintArg():
-{
-   Ast.Exp e; String s = null;
-}
+{ Ast.Exp e; String s = null; }
 {
    ( LOOKAHEAD(2) e=Expr() | s=StrLit() {e = new Ast.StrLit(s); })
    { return e; }
