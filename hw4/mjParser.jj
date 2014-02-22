@@ -28,7 +28,7 @@ public class mjParser {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	Ast.UOP p = new mjParser(stream).Program();
+	Ast.Exp p = new mjParser(stream).Program();
 	stream.close();
 	System.out.println(p);
       } else {
@@ -131,15 +131,34 @@ TOKEN : /* Id */
 // PARSER SECTION ---------------------------------------------------------------
 //
 
-Ast.UOP Program():
+Ast.Exp Program():
 {
-   Ast.UOP t;
+   Ast.Exp t;
 }
 {
-   t=UnOp() <EOF>
+   t=ExtId() <EOF>
    {return t;}
 }
 
+
+Ast.Exp ExtId():
+{
+   Ast.Exp extId;
+   Ast.Id id;
+   boolean self = false;
+}
+{
+   ["this" "." {self=true;}] id=Id() 
+   {
+      if (self) {
+         extId = new Ast.Field(new Ast.This(), id.nm);
+      } else {
+         extId = id;
+      }
+   } ("." id=Id() { extId = new Ast.Field(extId, id.nm);})*
+
+   { return extId; }
+}
 
 Ast.Type ExtType():
 {  Ast.Type type; }
