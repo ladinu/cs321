@@ -28,9 +28,9 @@ public class mjParser {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	Ast.Program p = new mjParser(stream).Program();
+	Ast.UOP p = new mjParser(stream).Program();
 	stream.close();
-	System.out.print(p);
+	System.out.println(p);
       } else {
 	System.out.print("Need a file name as command-line argument.\n");
       }
@@ -130,156 +130,38 @@ TOKEN : /* Id */
 //
 // PARSER SECTION ---------------------------------------------------------------
 //
-Ast.Program Program():
-{  List<Ast.ClassDecl> c1 = new ArrayList<Ast.ClassDecl>();
-   Ast.ClassDecl c;
+
+Ast.UOP Program():
+{
+   Ast.UOP t;
 }
 {
-   ( c=ClassDecl() {c1.add(c);} )* <EOF>
-   { return new Ast.Program(c1); }
+   t=UnOp() <EOF>
+   {return t;}
 }
 
-Ast.ClassDecl ClassDecl():
-{  Ast.Id className;
-   Ast.Id parentName = null;
-   List<Ast.VarDecl> variables  = new ArrayList<Ast.VarDecl>();
-   List<Ast.MethodDecl> methods = new ArrayList<Ast.MethodDecl>();
-   
-   Ast.VarDecl variable;
-   Ast.MethodDecl method;
-}
-{
-   "class" className=Id() ["extends" parentName=Id()] "{" 
-      (variable=VarDecl()   { variables.add(variable); })* 
-      (method=MethodDecl()  { methods.add(method);     })* 
-   "}"
-
-   { return new Ast.ClassDecl(className.nm, parentName.nm, variables, methods); }  
-}
-
-Ast.MethodDecl MethodDecl():
-{  Ast.Type type = null;
-   Ast.Id methodName;
-   List<Ast.Param> params = new ArrayList<Ast.Param>();
-   List<Ast.VarDecl> variables = new ArrayList<Ast.VarDecl>();
-   List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
-
-   Ast.Param p;
-   Ast.VarDecl var;
-   Ast.Stmt stmt;
-}
-{
-   "public" ( type=ExtType() methodName=Id() "(" 
-              [p=Param() {params.add(p);} ("," p=Param() {params.add(p);})*] ")" |
-              "static" "void" "main" "(" 
-                  "String" "[" "]" p=Param() {params.add(p);} 
-               ")" )
-      "{" 
-         (var=VarDecl() {variables.add(var);})* 
-         (stmt=Stmt() {stmts.add(stmt);})*
-      "}"
-
-   { return new Ast.MethodDecl(type, methodName.nm, params, variables, stmts); }
-}
-
-Ast.Param Param():
-{  Ast.Type type;
-   Ast.Id name;
-}
-{  type=Type() name=Id()
-   { return new Ast.Param(type, name.nm); }
-}
-
-Ast.VarDecl VarDecl():
-{  Ast.Type type;
-   Ast.Id name;
-   Ast.Exp exp;
-}
-{  type=Type() name=Id() ["=" exp=InitExpr()] ";"
-   { return new Ast.VarDecl(type, name.nm, exp); }  
-}
 
 Ast.Type ExtType():
 {  Ast.Type type; }
-{  "void" { type=null; } | type=Type()
+{  
+   ("void" { type=null; } | 
+   type=Type())
    { return type; }
 }
 
 Ast.Type Type():
 {  Ast.Type type; 
    Ast.Id typeId; }
-{  type=BasicType() [ "[" "]" {type = new Ast.ArrayType(type);}] |
-   typeId=Id() { type = new Ast.ObjType(typeId.nm);}
-   { return type; }
-}
-
-Ast.Stmt Stmt():
-{  List<Ast.Block> blocks = new ArrayList<Ast.Block>();
-
-   Ast.Stmt stmt;
-   Ast.Stmt stmt0 = null;
-   Ast.Block block;
-   Ast.Assign assign;
-   Ast.CallStmt call;
-   Ast.If ifStmt;
-   Ast.While whileStmt;
-   Ast.Print print;
-   Ast.Return returnStmt;
-
-   Ast.Exp extId;
-   Ast.Exp exp1;
-   Ast.Exp exp2;
-   Ast.Exp exp0 = null;
-}
-{  "{" (stmt=Stmt() {blocks.add(Ast.Block(stmt));})* "}" { return new Ast.Block(block); } |
-   exp1=ExtId() "=" exp2=InitExpr() ";" {return Ast.Assign(exp1, exp2);}
-   "if" "(" exp1=Expr() ")" stmt=Stmt()  ["else" stmt0=Stmt()] {return new
-      Ast.If(exp1, stmt, stmt0);} |
-   "while" "(" exp1=Expr() ")" stmt=Stmt() {return new Ast.While(exp1, stmt);} |
-   //"Systme.out.println" "("[exp0=PrintArg()] ")"  ";" {return new Ast.Print(exp0);}|
-   "return" [exp0=Expr()] ";" {return new Ast.Return(exp0);}
-   
-}
-
-Ast.Exp ExtId():
-{  Ast.This self;
-   Ast.Exp tmpId;
-   Ast.Exp retExp;
-}
 {
-   ["This" "." {self = new Ast.This();}] retExp=Id() 
-   { 
-      if (self) 
-         retExp = new Ast.Field(self, retExp.nm); 
-   } ("." tmpId=Id() {retExp = new Ast.Field(retExp, tmpId.nm); })*
-
-   { return retExp; }
-}
-
-Ast.Exp InitExpr(): 
-{
-   Ast.Exp initExpr;
-}
-{
-   initExpr=Expr()
-   { return initExpr; }
-}
-
-
-Ast.Exp Expr():
-{
-   Token token;
-}
-{
-   token=<IntLit> {return new Ast.IntLit(token.image.toInt());} |
-   token=<StrLit> {return new Ast.StrLit(token.image);} |
-   token=<BoolLit>{return new Ast.BoolLit(Boolean.parseBoolean(token.image));}
+   (type=BasicType() [ "[" "]" { type=new Ast.ArrayType(type); }] |
+   typeId=Id() { type=new Ast.ObjType(typeId.nm); })
+   {return type;}
 }
 
 Ast.Type BasicType():
 {  Ast.Type type; }
-{  (type=BoolType() | type=IntType() )
-   { return type; }
+{  "boolean" {return new Ast.BoolType(); } | 
+   "int" { return new Ast.IntType(); }
 }
 
 Ast.Id Id():
@@ -288,22 +170,18 @@ Ast.Id Id():
    token=<Id> { return new Ast.Id(token.image); }
 }
 
-Ast.Type BoolType(): {}
+Ast.BOP RelOp(): {}
 {
-   "boolean" { return new Ast.BoolType(); }
-}
-
-Ast.Type IntType(): {}
-{
-   "int" { return new Ast.IntType(); }
-}
-
-Ast.BOP CompOp(): {}
-{
-   "==" { return Ast.BOP.EQ; }
+ ( "==" { return Ast.BOP.EQ; }
  | "!=" { return Ast.BOP.NE; }
  | "<=" { return Ast.BOP.LE; }
  | ">=" { return Ast.BOP.GE; }
  | "<"  { return Ast.BOP.LT; }
- | ">"  { return Ast.BOP.GT; }
+ | ">"  { return Ast.BOP.GT; })
+}
+
+Ast.UOP UnOp(): {}
+{
+   ( "-" { return Ast.UOP.NEG; }
+   | "!" { return Ast.UOP.NOT; })
 }
