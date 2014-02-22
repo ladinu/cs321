@@ -133,13 +133,111 @@ TOKEN : /* Id */
 
 Ast.Exp Program():
 {
-   Ast.Exp t;
+   Ast.Exp factor;
 }
 {
-   t=ExtId() <EOF>
-   {return t;}
+   factor=PrintArg() <EOF>
+   {return factor;}
 }
 
+
+Ast.Exp PrintArg():
+{
+   Ast.Exp e; String s = null;
+}
+{
+   ( LOOKAHEAD(2) e=Expr() | s=StrLit() {e = new Ast.StrLit(s); })
+   { return e; }
+}
+
+Ast.Exp InitExpr():
+{
+   Ast.Exp e;
+   Ast.Type t;
+   Ast.Id id;
+   int idx;
+   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+}
+{
+   ( "new" ( t=BasicType() "[" idx=IntLit() "]" { e = new Ast.NewArray(t, idx);}
+           | id=Id() "(" [args=Args()] ")" { e = new Ast.NewObj(id.nm, args);})
+   | e=Expr())
+
+   { return e; }
+}
+
+Ast.Exp Expr():
+{ Ast.Exp e1, e2; }
+{
+   e1=AndExpr() ( "||" e2=AndExpr() {e1 = new Ast.Binop(Ast.BOP.OR, e1, e2);})*
+   { return e1; }
+}
+
+Ast.Exp AndExpr():
+{ Ast.Exp e1, e2; }
+{
+   e1=RelExpr() ( "&&" e2=RelExpr() {e1 = new Ast.Binop(Ast.BOP.AND, e1, e2);})*
+   {return e1; }
+}
+
+Ast.Exp RelExpr():
+{ Ast.Exp e1, e2; Ast.BOP op; }
+{
+   e1=ArithExpr() ( op=RelOp() e2=ArithExpr() {e1 = new Ast.Binop(op, e1, e2);})*
+   {return e1; }
+}
+
+Ast.Exp ArithExpr():
+{ Ast.Exp e1, e2; Ast.BOP op; }
+{
+   e1=Term() ( op=AddSubOp() e2=Term() {e1 = new Ast.Binop(op, e1, e2);})*
+   {return e1; }
+}
+
+Ast.Exp Term():
+{ Ast.Exp e1, e2; Ast.BOP op; }
+{
+   e1=Factor() ( op=MultDivOp() e2=Factor() {e1 = new Ast.Binop(op, e1, e2);})*
+   {return e1; }
+}
+
+Ast.Exp Factor():
+{
+   Ast.Exp f;
+   Ast.Exp e;
+   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+   boolean hasArgs = false;
+   Ast.UOP unop;
+   String strLit;
+   boolean boolLit;
+   int intLit;
+}
+{
+   ( unop=UnOp() f=Factor() { f =  new Ast.Unop(unop, f); }
+   | "(" f=Expr() ")"
+   /*| f=ExtId() ( ["[" e=Expr() "]" {f = new Ast.ArrayElm(f, e);}]
+                 |"(" [args=Args()] ")" {if (f instanceof Ast.Id) {
+                        f = new Ast.Call(new Ast.This(), f.nm, args);
+                     } else {
+                        f = new Ast.Call(f.obj, f.nm, args);
+                     }} )
+*/
+   | strLit=StrLit() { f =  new Ast.StrLit(strLit); }
+   | intLit=IntLit() { f =  new Ast.IntLit(intLit); }
+   | boolLit=BoolLit() { f =  new Ast.BoolLit(boolLit); })
+
+   {return f;}
+}
+
+List<Ast.Exp> Args():
+{
+   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+   Ast.Exp e;
+}
+{
+   e=Expr() {args.add(e);} ("," e=Expr() {args.add(e);})*
+   { return args; }
+}
 
 Ast.Exp ExtId():
 {
@@ -189,6 +287,25 @@ Ast.Id Id():
    token=<Id> { return new Ast.Id(token.image); }
 }
 
+String StrLit():
+{ Token tkn; }
+{
+  tkn=<StrLit> { return tkn.image; }
+}
+
+int IntLit():
+{ Token tkn; }
+{
+  tkn=<IntLit> { return Integer.parseInt(tkn.image); }
+}
+
+boolean BoolLit():
+{ Token tkn; }
+{
+  tkn=<BoolLit> { return Boolean.parseBoolean(tkn.image); }
+}
+
+
 Ast.BOP RelOp(): {}
 {
  ( "==" { return Ast.BOP.EQ; }
@@ -199,8 +316,21 @@ Ast.BOP RelOp(): {}
  | ">"  { return Ast.BOP.GT; })
 }
 
+Ast.BOP AddSubOp(): {}
+{
+   ( "+" { return Ast.BOP.ADD; }
+   | "-" { return Ast.BOP.SUB; } )
+}
+
+Ast.BOP MultDivOp(): {}
+{
+   ( "*" { return Ast.BOP.MUL; }
+   | "/" { return Ast.BOP.DIV; } )
+}
+
 Ast.UOP UnOp(): {}
 {
    ( "-" { return Ast.UOP.NEG; }
    | "!" { return Ast.UOP.NOT; })
 }
+
