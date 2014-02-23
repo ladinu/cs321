@@ -28,9 +28,9 @@ public class mjParser {
     try {
       if (args.length == 1) {
 	FileInputStream stream = new FileInputStream(args[0]);
-	Ast.Stmt p = new mjParser(stream).Program();
+	Ast.Program p = new mjParser(stream).Program();
 	stream.close();
-	System.out.println(p);
+	System.out.print(p);
       } else {
 	System.out.print("Need a file name as command-line argument.\n");
       }
@@ -131,13 +131,69 @@ TOKEN : /* Id */
 // PARSER SECTION ---------------------------------------------------------------
 //
 
-Ast.Stmt Program():
-{
-   Ast.Stmt factor;
+Ast.Program Program():
+{  List<Ast.ClassDecl> c1 = new ArrayList<Ast.ClassDecl>();
+   Ast.ClassDecl c;
 }
 {
-   factor=Stmt() <EOF>
-   {return factor;}
+   ( c=ClassDecl() {c1.add(c);} )* <EOF>
+   { return new Ast.Program(c1); }
+}
+
+Ast.ClassDecl ClassDecl():
+{  Ast.Id className;
+   Ast.Id pn = null;
+   List<Ast.VarDecl> variables  = new ArrayList<Ast.VarDecl>();
+   List<Ast.MethodDecl> methods = new ArrayList<Ast.MethodDecl>();
+   
+   Ast.VarDecl variable;
+   Ast.MethodDecl method;
+}
+{
+   "class" className=Id() ["extends" pn=Id()] "{" 
+      (variable=VarDecl()   { variables.add(variable); })* 
+      (method=MethodDecl()  { methods.add(method);     })* 
+   "}"
+
+   { return new Ast.ClassDecl(className.nm, pn == null? null : pn.nm, variables, methods); }  
+}
+
+Ast.MethodDecl MethodDecl():
+{  Ast.Type t = null;
+   Ast.Id mn = null;
+   List<Ast.Param> params = new ArrayList<Ast.Param>();
+   List<Ast.VarDecl> vars = new ArrayList<Ast.VarDecl>();
+   List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
+
+   Ast.Param p;
+   Ast.VarDecl var;
+   Ast.Stmt stmt;
+}
+{
+   "public" (t=ExtType() mn=Id()"("[p=Param() {params.add(p);}("," p=Param() {params.add(p);})*]")"
+           | "static" "void" "main" "(" "String" "["  "]" Id() ")" )
+      "{"
+         (var=VarDecl() {vars.add(var);})* 
+         (stmt=Stmt() {stmts.add(stmt);})*
+      "}"
+   { return new Ast.MethodDecl(t, mn == null? "main" : mn.nm, params, vars, stmts); }
+}
+
+Ast.Param Param():
+{  Ast.Type type;
+   Ast.Id name;
+}
+{  type=Type() name=Id()
+   { return new Ast.Param(type, name.nm); }
+}
+
+Ast.VarDecl VarDecl():
+{  Ast.Type type;
+   Ast.Id name;
+   Ast.Exp exp = null;
+}
+{  type=Type() name=Id() ["=" exp=InitExpr()] ";"
+   { return new Ast.VarDecl(type, name.nm, exp); }  
 }
 
 Ast.Stmt Stmt():
@@ -329,13 +385,19 @@ Ast.Type BasicType():
 Ast.Id Id():
 {  Token token; }
 {
-   token=<Id> { return new Ast.Id(token.image); }
+   token=<Id> {
+      String lit = new String(token.image);
+      return new Ast.Id(lit);
+   }
 }
 
 String StrLit():
 { Token tkn; }
 {
-  tkn=<StrLit> { return tkn.image; }
+  tkn=<StrLit> {
+   String lit = new String(tkn.image);
+   return lit.replaceAll("^\"|\"$", "");
+   }
 }
 
 int IntLit():
