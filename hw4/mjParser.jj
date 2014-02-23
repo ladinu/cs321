@@ -173,7 +173,7 @@ Ast.MethodDecl MethodDecl():
    "public" (t=ExtType() mn=Id()"("[p=Param() {params.add(p);}("," p=Param() {params.add(p);})*]")"
            | "static" "void" "main" "(" "String" "["  "]" Id() ")" )
       "{"
-         (var=VarDecl() {vars.add(var);})* 
+         (LOOKAHEAD(2) var=VarDecl() {vars.add(var);})* 
          (stmt=Stmt() {stmts.add(stmt);})*
       "}"
    { return new Ast.MethodDecl(t, mn == null? "main" : mn.nm, params, vars, stmts); }
@@ -305,7 +305,7 @@ Ast.Exp Term():
 Ast.Exp Factor():
 {
    Ast.Exp f;
-   Ast.Exp e;
+   Ast.Exp e = null;
    List<Ast.Exp> args = new ArrayList<Ast.Exp>();
    boolean hasArgs = false;
    Ast.UOP unop;
@@ -314,19 +314,17 @@ Ast.Exp Factor():
    int intLit;
 }
 {
-   ( unop=UnOp() f=Factor() { f =  new Ast.Unop(unop, f); }
+   ( unop=UnOp() f=Factor() { f = new Ast.Unop(unop, f); }
    | "(" f=Expr() ")"
-   /*| f=ExtId() ( ["[" e=Expr() "]" {f = new Ast.ArrayElm(f, e);}]
-                 |"(" [args=Args()] ")" {if (f instanceof Ast.Id) {
-                        f = new Ast.Call(new Ast.This(), f.nm, args);
-                     } else {
-                        f = new Ast.Call(f.obj, f.nm, args);
-                     }} )
-*/
-   | strLit=StrLit() { f =  new Ast.StrLit(strLit); }
-   | intLit=IntLit() { f =  new Ast.IntLit(intLit); }
-   | boolLit=BoolLit() { f =  new Ast.BoolLit(boolLit); })
-
+   | f=ExtId() [( "(" [args=Args()] ")" ) {
+     if (f instanceof Ast.Id) {
+        f = new Ast.Call( new Ast.This(), ((Ast.Id)f).nm, args);
+     } else if (f instanceof Ast.Field) {
+        f = new Ast.Call(f, ((Ast.Field)f).nm, args);
+     }} | ("[" e=Expr() "]") { f = new Ast.ArrayElm(f, e);}]
+   | strLit=StrLit() { f = new Ast.StrLit(strLit); }
+   | intLit=IntLit() { f = new Ast.IntLit(intLit); }
+   | boolLit=BoolLit() { f = new Ast.BoolLit(boolLit); })
    {return f;}
 }
 
@@ -344,18 +342,12 @@ Ast.Exp ExtId():
 {
    Ast.Exp extId;
    Ast.Id id;
-   boolean self = false;
+   Ast.Id mn;
+   Ast.This self = null;
 }
 {
-   ["this" "." {self=true;}] id=Id() 
-   {
-      if (self) {
-         extId = new Ast.Field(new Ast.This(), id.nm);
-      } else {
-         extId = id;
-      }
-   } ("." id=Id() { extId = new Ast.Field(extId, id.nm);})*
-
+   ["this" "." {self=new Ast.This();}] id=Id() {extId = self == null ? id : new Ast.Field(self, id.nm);}
+   ("." id=Id() {extId = new Ast.Field(extId, id.nm);})*
    { return extId; }
 }
 
