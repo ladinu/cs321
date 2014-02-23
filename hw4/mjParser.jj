@@ -134,8 +134,10 @@ TOKEN : /* Id */
 Ast.Program Program():
 {  List<Ast.ClassDecl> c1 = new ArrayList<Ast.ClassDecl>();
    Ast.ClassDecl c;
+   //Ast.Stmt stmt;
 }
 {
+   //stmt=Stmt() { return stmt; } <EOF>
    ( c=ClassDecl() {c1.add(c);} )* <EOF>
    { return new Ast.Program(c1); }
 }
@@ -247,8 +249,8 @@ Ast.Stmt Stmt():
 Ast.Exp PrintArg():
 { Ast.Exp e; String s = null; }
 {
-   ( LOOKAHEAD(2) e=Expr() | s=StrLit() {e = new Ast.StrLit(s); })
-   { return e; }
+   e=Expr() { return e; } | 
+   s=StrLit() { return new Ast.StrLit(s); }
 }
 
 Ast.Exp InitExpr():
@@ -316,13 +318,12 @@ Ast.Exp Factor():
 {
    ( unop=UnOp() f=Factor() { f = new Ast.Unop(unop, f); }
    | "(" f=Expr() ")"
-   | f=ExtId() [( "(" [args=Args()] ")" ) {
+   | f=ExtId() ["(" [args=Args()] ")" {
      if (f instanceof Ast.Id) {
         f = new Ast.Call( new Ast.This(), ((Ast.Id)f).nm, args);
      } else if (f instanceof Ast.Field) {
-        f = new Ast.Call(f, ((Ast.Field)f).nm, args);
-     }} | ("[" e=Expr() "]") { f = new Ast.ArrayElm(f, e);}]
-   | strLit=StrLit() { f = new Ast.StrLit(strLit); }
+        f = new Ast.Call( ((Ast.Field)f).obj, ((Ast.Field)f).nm, args);
+     }} |LOOKAHEAD(2) "["e=Expr()"]" { f = new Ast.ArrayElm(f, e); }]
    | intLit=IntLit() { f = new Ast.IntLit(intLit); }
    | boolLit=BoolLit() { f = new Ast.BoolLit(boolLit); })
    {return f;}
