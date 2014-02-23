@@ -293,14 +293,16 @@ Ast.Exp RelExpr():
 Ast.Exp ArithExpr():
 { Ast.Exp e1, e2; Ast.BOP op; }
 {
-   e1=Term() ( op=AddSubOp() e2=Term() {e1 = new Ast.Binop(op, e1, e2);})*
+   e1=Term() ( ("+" {op=Ast.BOP.ADD;}| "-" {op=Ast.BOP.SUB;}) e2=Term() 
+  {e1 = new Ast.Binop(op, e1, e2);})*
    {return e1; }
 }
 
 Ast.Exp Term():
 { Ast.Exp e1, e2; Ast.BOP op; }
 {
-   e1=Factor() ( op=MultDivOp() e2=Factor() {e1 = new Ast.Binop(op, e1, e2);})*
+   e1=Factor() ( ( "*" {op=Ast.BOP.MUL;} | "/" {op=Ast.BOP.DIV;}) e2=Factor() 
+   {e1 = new Ast.Binop(op, e1, e2);})*
    {return e1; }
 }
 
@@ -410,22 +412,10 @@ Ast.BOP RelOp(): {}
 {
  ( "==" { return Ast.BOP.EQ; }
  | "!=" { return Ast.BOP.NE; }
- | "<=" { return Ast.BOP.LE; }
- | ">=" { return Ast.BOP.GE; }
  | "<"  { return Ast.BOP.LT; }
+ | "<=" { return Ast.BOP.LE; }
  | ">"  { return Ast.BOP.GT; })
-}
-
-Ast.BOP AddSubOp(): {}
-{
-   ( "+" { return Ast.BOP.ADD; }
-   | "-" { return Ast.BOP.SUB; } )
-}
-
-Ast.BOP MultDivOp(): {}
-{
-   ( "*" { return Ast.BOP.MUL; }
-   | "/" { return Ast.BOP.DIV; } )
+ | ">=" { return Ast.BOP.GE; }
 }
 
 Ast.UOP UnOp(): {}
