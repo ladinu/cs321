@@ -19,3 +19,7 @@ all: AstParser.java TestReachability.class
 clean:	
 	rm -f AstParser*.java TokenMgrError.java Token.java ParseException.java SimpleCharStream.java
 	rm -f ast*/*.class *.class
+	rm -f test/pref.ref
+
+test:
+	./test.sh
