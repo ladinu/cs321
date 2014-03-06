@@ -177,7 +177,6 @@ public class Ast {
 
   public static abstract class Stmt extends Node {
     public boolean reachable = true; // inital flag value choice is arbitrary
-    public abstract void setReachability();
     public abstract void setUnReachable();
     public abstract boolean willExecuteReturnStmt();
   }
@@ -202,9 +201,15 @@ public class Ast {
       return s;
     }
     public void setReachability() {
-      reachable = false;
-      for (Stmt s : stmts) 
-	s.setReachability();
+      boolean returnStmtFound = false;
+
+      for (Stmt stmt : stmts) {
+         if (returnStmtFound) 
+            stmt.setUnReachable();
+         
+         if (stmt.willExecuteReturnStmt()) 
+            returnStmtFound = true;
+      }
     }
 
     public void setUnReachable() {
@@ -215,10 +220,10 @@ public class Ast {
     }
 
     public boolean willExecuteReturnStmt() {
+       setReachability();
        for (Stmt s : stmts) {
-          if (s.willExecuteReturnStmt()) {
+          if (s.willExecuteReturnStmt())
              return true;
-          }
        }
        return false;
     }
@@ -233,9 +238,6 @@ public class Ast {
 
     public String toString() { 
       return tab(!reachable) + "Assign " + lhs + " " + rhs + "\n"; 
-    }
-    public void setReachability() {
-      reachable = false;
     }
 
     public void setUnReachable() {
@@ -264,9 +266,6 @@ public class Ast {
 	s += e + " "; 
       s += ")\n"; 
       return s;
-    }
-    public void setReachability() {
-      reachable = false;
     }
 
     public void setUnReachable() {
@@ -298,12 +297,6 @@ public class Ast {
       }
       return str;
     }
-    public void setReachability() {
-      reachable = false;
-      s1.setReachability();
-      if (s2 != null)
-	s2.setReachability();
-    }
 
     public void setUnReachable() {
        reachable = false;
@@ -333,11 +326,6 @@ public class Ast {
       Ast.tab--;
       return str;
     }
-    public void setReachability() {
-      reachable = false;
-      s.setReachability();
-    }
-
     public void setUnReachable() {
        reachable = false;
        s.setUnReachable();
@@ -356,10 +344,6 @@ public class Ast {
     public String toString() { 
       return tab(!reachable) + "Print " + (arg==null ? "()" : arg) + "\n"; 
     }
-    public void setReachability() {
-      reachable = false;
-    }
-
     public void setUnReachable() {
        reachable = false;
     }
@@ -377,10 +361,6 @@ public class Ast {
     public String toString() { 
       return tab(!reachable) + "Return " + (val==null ? "()" : val) + "\n"; 
     }
-    public void setReachability() {
-      reachable = false;
-    }
-
     public void setUnReachable() {
        reachable = false;
     }

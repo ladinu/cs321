@@ -1,5 +1,5 @@
 import java.io.*;
-import ast0.*;
+import ast1.*;
 
 class TestReachability {
   public static void main(String [] args) {

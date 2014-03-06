@@ -1,0 +1,15 @@
+# AST Program
+ ClassDecl Test 
+  MethodDecl void main ()
+   {
+    Print 42
+    Return false
+!   Print 42
+!   {
+!    Return true
+!    Print "foo"
+!    Return false
+!   }
+   }
+!  Return false
+!  Print 42
