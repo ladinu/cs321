@@ -130,21 +130,18 @@ TOKEN : /* Id */
 //
 // PARSER SECTION ---------------------------------------------------------------
 //
-
 Ast.Program Program():
 {  List<Ast.ClassDecl> c1 = new ArrayList<Ast.ClassDecl>();
    Ast.ClassDecl c;
-   //Ast.Stmt stmt;
 }
 {
-   //stmt=Stmt() { return stmt; } <EOF>
    ( c=ClassDecl() {c1.add(c);} )* <EOF>
    { return new Ast.Program(c1); }
 }
 
 Ast.ClassDecl ClassDecl():
 {  Ast.Id className;
-   Ast.Id pn = null;
+   Ast.Id parentName = null;
    List<Ast.VarDecl> variables  = new ArrayList<Ast.VarDecl>();
    List<Ast.MethodDecl> methods = new ArrayList<Ast.MethodDecl>();
    
@@ -152,19 +149,19 @@ Ast.ClassDecl ClassDecl():
    Ast.MethodDecl method;
 }
 {
-   "class" className=Id() ["extends" pn=Id()] "{" 
+   "class" className=Id() ["extends" parentName=Id()] "{" 
       (variable=VarDecl()   { variables.add(variable); })* 
       (method=MethodDecl()  { methods.add(method);     })* 
    "}"
 
-   { return new Ast.ClassDecl(className.nm, pn == null? null : pn.nm, variables, methods); }  
+   { return new Ast.ClassDecl(className.nm, parentName.nm, variables, methods); }  
 }
 
 Ast.MethodDecl MethodDecl():
-{  Ast.Type t = null;
-   Ast.Id mn = null;
+{  Ast.Type type = null;
+   Ast.Id methodName;
    List<Ast.Param> params = new ArrayList<Ast.Param>();
-   List<Ast.VarDecl> vars = new ArrayList<Ast.VarDecl>();
+   List<Ast.VarDecl> variables = new ArrayList<Ast.VarDecl>();
    List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
 
    Ast.Param p;
@@ -172,13 +169,17 @@ Ast.MethodDecl MethodDecl():
    Ast.Stmt stmt;
 }
 {
-   "public" (t=ExtType() mn=Id()"("[p=Param() {params.add(p);}("," p=Param() {params.add(p);})*]")"
-           | "static" "void" "main" "(" "String" "["  "]" Id() ")" )
-      "{"
-         (LOOKAHEAD(2) var=VarDecl() {vars.add(var);})* 
+   "public" ( type=ExtType() methodName=Id() "(" 
+              [p=Param() {params.add(p);} ("," p=Param() {params.add(p);})*] ")" |
+              "static" "void" "main" "(" 
+                  "String" "[" "]" p=Param() {params.add(p);} 
+               ")" )
+      "{" 
+         (var=VarDecl() {variables.add(var);})* 
          (stmt=Stmt() {stmts.add(stmt);})*
       "}"
-   { return new Ast.MethodDecl(t, mn == null? "main" : mn.nm, params, vars, stmts); }
+
+   { return new Ast.MethodDecl(type, methodName.nm, params, variables, stmts); }
 }
 
 Ast.Param Param():
@@ -192,16 +193,29 @@ Ast.Param Param():
 Ast.VarDecl VarDecl():
 {  Ast.Type type;
    Ast.Id name;
-   Ast.Exp exp = null;
+   Ast.Exp exp;
 }
 {  type=Type() name=Id() ["=" exp=InitExpr()] ";"
    { return new Ast.VarDecl(type, name.nm, exp); }  
 }
 
+Ast.Type ExtType():
+{  Ast.Type type; }
+{  "void" { type=null; } | type=Type()
+   { return type; }
+}
+
+Ast.Type Type():
+{  Ast.Type type; 
+   Ast.Id typeId; }
+{  type=BasicType() [ "[" "]" {type = new Ast.ArrayType(type);}] |
+   typeId=Id() { type = new Ast.ObjType(typeId.nm);}
+   { return type; }
+}
+
 Ast.Stmt Stmt():
-{  
-   List<Ast.Stmt> stmts = new ArrayList<Ast.Stmt>();
-   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+{  List<Ast.Block> blocks = new ArrayList<Ast.Block>();
+
    Ast.Stmt stmt;
    Ast.Stmt stmt0 = null;
    Ast.Block block;
@@ -213,214 +227,83 @@ Ast.Stmt Stmt():
    Ast.Return returnStmt;
 
    Ast.Exp extId;
-   Ast.Id exp1Id;
-   Ast.Field exp1F;
    Ast.Exp exp1;
    Ast.Exp exp2;
    Ast.Exp exp0 = null;
 }
-{  
-   "{" (stmt=Stmt() {stmts.add(stmt);})* "}" { return new Ast.Block(stmts); } |
-   exp1=ExtId() ( ["[" exp0=Expr() "]"] "=" exp2=InitExpr() ";" {
-
-                  if (exp0 == null) {
-                     return new Ast.Assign(exp1, exp2);
-                  } else {
-                     return new Ast.Assign( new Ast.ArrayElm(exp1, exp0), exp2 );
-                  }
-}|
-                  "(" [args=Args()] ")" ";" {
-                     if (exp1 instanceof Ast.Field) {
-                        exp1F = (Ast.Field)exp1;
-                        return new Ast.CallStmt(exp1F.obj, exp1F.nm, args);
-                     } else {
-                        exp1Id = (Ast.Id)exp1;
-                        return new Ast.CallStmt(new Ast.This(), exp1Id.nm, args);
-                     }
-} ) |
-   "if" "(" exp1=Expr() ")" stmt=Stmt()  [ LOOKAHEAD(1) "else" stmt0=Stmt()] {return new
+{  "{" (stmt=Stmt() {blocks.add(Ast.Block(stmt));})* "}" { return new Ast.Block(block); } |
+   exp1=ExtId() "=" exp2=InitExpr() ";" {return Ast.Assign(exp1, exp2);}
+   "if" "(" exp1=Expr() ")" stmt=Stmt()  ["else" stmt0=Stmt()] {return new
       Ast.If(exp1, stmt, stmt0);} |
    "while" "(" exp1=Expr() ")" stmt=Stmt() {return new Ast.While(exp1, stmt);} |
-   "System.out.println" "("[exp0=PrintArg()] ")"  ";" {return new Ast.Print(exp0);}|
+   //"Systme.out.println" "("[exp0=PrintArg()] ")"  ";" {return new Ast.Print(exp0);}|
    "return" [exp0=Expr()] ";" {return new Ast.Return(exp0);}
    
 }
 
-Ast.Exp PrintArg():
-{ Ast.Exp e; String s = null; }
+Ast.Exp ExtId():
+{  Ast.This self;
+   Ast.Exp tmpId;
+   Ast.Exp retExp;
+}
 {
-   e=Expr() { return e; } | 
-   s=StrLit() { return new Ast.StrLit(s); }
+   ["This" "." {self = new Ast.This();}] retExp=Id() 
+   { 
+      if (self) 
+         retExp = new Ast.Field(self, retExp.nm); 
+   } ("." tmpId=Id() {retExp = new Ast.Field(retExp, tmpId.nm); })*
+
+   { return retExp; }
 }
 
-Ast.Exp InitExpr():
+Ast.Exp InitExpr(): 
 {
-   Ast.Exp e;
-   Ast.Type t;
-   Ast.Id id;
-   int idx;
-   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+   Ast.Exp initExpr;
 }
 {
-   ( "new" ( t=BasicType() "[" idx=IntLit() "]" { e = new Ast.NewArray(t, idx);}
-           | id=Id() "(" [args=Args()] ")" { e = new Ast.NewObj(id.nm, args);})
-   | e=Expr())
+   initExpr=Expr()
+   { return initExpr; }
+}
 
-   { return e; }
-}
 
 Ast.Exp Expr():
-{ Ast.Exp e1, e2; }
 {
-   e1=AndExpr() ( "||" e2=AndExpr() {e1 = new Ast.Binop(Ast.BOP.OR, e1, e2);})*
-   { return e1; }
-}
-
-Ast.Exp AndExpr():
-{ Ast.Exp e1, e2; }
-{
-   e1=RelExpr() ( "&&" e2=RelExpr() {e1 = new Ast.Binop(Ast.BOP.AND, e1, e2);})*
-   {return e1; }
-}
-
-Ast.Exp RelExpr():
-{ Ast.Exp e1, e2; Ast.BOP op; }
-{
-   e1=ArithExpr() ( op=RelOp() e2=ArithExpr() {e1 = new Ast.Binop(op, e1, e2);})*
-   {return e1; }
-}
-
-Ast.Exp ArithExpr():
-{ Ast.Exp e1, e2; Ast.BOP op; }
-{
-   e1=Term() ( ("+" {op=Ast.BOP.ADD;}| "-" {op=Ast.BOP.SUB;}) e2=Term() 
-  {e1 = new Ast.Binop(op, e1, e2);})*
-   {return e1; }
-}
-
-Ast.Exp Term():
-{ Ast.Exp e1, e2; Ast.BOP op; }
-{
-   e1=Factor() ( ( "*" {op=Ast.BOP.MUL;} | "/" {op=Ast.BOP.DIV;}) e2=Factor() 
-   {e1 = new Ast.Binop(op, e1, e2);})*
-   {return e1; }
-}
-
-Ast.Exp Factor():
-{
-   Ast.Exp f;
-   Ast.Exp e = null;
-   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
-   boolean hasArgs = false;
-   Ast.UOP unop;
-   String strLit;
-   boolean boolLit;
-   int intLit;
+   Token token;
 }
 {
-   ( unop=UnOp() f=Factor() { f = new Ast.Unop(unop, f); }
-   | "(" f=Expr() ")"
-   | f=ExtId() ["(" [args=Args()] ")" {
-     if (f instanceof Ast.Id) {
-        f = new Ast.Call( new Ast.This(), ((Ast.Id)f).nm, args);
-     } else if (f instanceof Ast.Field) {
-        f = new Ast.Call( ((Ast.Field)f).obj, ((Ast.Field)f).nm, args);
-     }} |LOOKAHEAD(2) "["e=Expr()"]" { f = new Ast.ArrayElm(f, e); }]
-   | intLit=IntLit() { f = new Ast.IntLit(intLit); }
-   | boolLit=BoolLit() { f = new Ast.BoolLit(boolLit); })
-   {return f;}
-}
-
-List<Ast.Exp> Args():
-{
-   List<Ast.Exp> args = new ArrayList<Ast.Exp>();
-   Ast.Exp e;
-}
-{
-   e=Expr() {args.add(e);} ("," e=Expr() {args.add(e);})*
-   { return args; }
-}
-
-Ast.Exp ExtId():
-{
-   Ast.Exp extId;
-   Ast.Id id;
-   Ast.Id mn;
-   Ast.This self = null;
-}
-{
-   ["this" "." {self=new Ast.This();}] id=Id() {extId = self == null ? id : new Ast.Field(self, id.nm);}
-   ("." id=Id() {extId = new Ast.Field(extId, id.nm);})*
-   { return extId; }
-}
-
-Ast.Type ExtType():
-{  Ast.Type type; }
-{  
-   ("void" { type=null; } | 
-   type=Type())
-   { return type; }
-}
-
-Ast.Type Type():
-{  Ast.Type type; 
-   Ast.Id typeId; }
-{
-   (type=BasicType() [ "[" "]" { type=new Ast.ArrayType(type); }] |
-   typeId=Id() { type=new Ast.ObjType(typeId.nm); })
-   {return type;}
+   token=<IntLit> {return new Ast.IntLit(token.image.toInt());} |
+   token=<StrLit> {return new Ast.StrLit(token.image);} |
+   token=<BoolLit>{return new Ast.BoolLit(Boolean.parseBoolean(token.image));}
 }
 
 Ast.Type BasicType():
 {  Ast.Type type; }
-{  "boolean" {return new Ast.BoolType(); } | 
-   "int" { return new Ast.IntType(); }
+{  (type=BoolType() | type=IntType() )
+   { return type; }
 }
 
 Ast.Id Id():
 {  Token token; }
 {
-   token=<Id> {
-      String lit = new String(token.image);
-      return new Ast.Id(lit);
-   }
+   token=<Id> { return new Ast.Id(token.image); }
 }
 
-String StrLit():
-{ Token tkn; }
+Ast.Type BoolType(): {}
 {
-  tkn=<StrLit> {
-   String lit = new String(tkn.image);
-   return lit.replaceAll("^\"|\"$", "");
-   }
+   "boolean" { return new Ast.BoolType(); }
 }
 
-int IntLit():
-{ Token tkn; }
+Ast.Type IntType(): {}
 {
-  tkn=<IntLit> { return Integer.parseInt(tkn.image); }
+   "int" { return new Ast.IntType(); }
 }
 
-boolean BoolLit():
-{ Token tkn; }
-{
-  tkn=<BoolLit> { return Boolean.parseBoolean(tkn.image); }
-}
-
-
-Ast.BOP RelOp(): {}
+Ast.BOP CompOp(): {}
 {
  ( "==" { return Ast.BOP.EQ; }
  | "!=" { return Ast.BOP.NE; }
- | "<"  { return Ast.BOP.LT; }
  | "<=" { return Ast.BOP.LE; }
- | ">"  { return Ast.BOP.GT; })
  | ">=" { return Ast.BOP.GE; }
+ | "<"  { return Ast.BOP.LT; }
+ | ">"  { return Ast.BOP.GT; })
 }
-
-Ast.UOP UnOp(): {}
-{
-   ( "-" { return Ast.UOP.NEG; }
-   | "!" { return Ast.UOP.NOT; })
-}
-
