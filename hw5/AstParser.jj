@@ -1,0 +1,293 @@
+// This is supporting software for CS321 Compilers and Language Design I
+// Copyright (c) Portland State University
+// 
+// An AST parser specification.
+//   
+// (Last modified on 2/11/14 by Andrew Tolmach.)
+//
+
+PARSER_BEGIN(AstParser)
+import java.util.*;
+import ast0.*;
+public class AstParser {
+}
+PARSER_END(AstParser)
+
+SKIP : /* WHITE SPACE */
+{
+  " " | "\t" | "\n" | "\r" | "\f"
+}
+
+SKIP : /* COMMENTS */
+{
+  <SLComment:    "#" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+}
+
+TOKEN : 
+{
+  <kwArrayElm:	  "ArrayElm">	  
+| <kwArrayType:	  "ArrayType">	   
+| <kwAssign:	  "Assign">	   
+| <kwBinop:	  "Binop">	   
+| <kwBoolType:	  "BoolType">	   
+| <kwCall:	  "Call">	     	   
+| <kwCallStmt:	  "CallStmt">	   
+| <kwClassDecl:	  "ClassDecl">	   
+| <kwElse:	  "Else">	     	  
+| <kwFalse:	  "False">	     	   
+| <kwField:	  "Field">	   
+| <kwIf:	  "If">	     	  
+| <kwIntType:	  "IntType">	   
+| <kwIntVal:	  "IntVal">	     	  
+| <kwMethodDecl:  "MethodDecl">     
+| <kwNewArray:	  "NewArray">	   
+| <kwNewObj:	  "NewObj">	   
+| <kwObjType:     "ObjType">     
+| <kwParam:	  "Param">	   
+| <kwPrint:	  "Print">	   
+| <kwReturn:	  "Return">	   
+| <kwStrVal:	  "StrVal">	     	   
+| <kwThis:	  "This">	     	   
+| <kwUnop:	  "Unop">	     	  
+| <kwVarDecl:	  "VarDecl">	   
+| <kwVoid:	  "void">	   
+| <kwWhile:       "While">          
+| <BoolLit:       "true"|"false">
+| <#Digit:        ["0"-"9"]>
+| <#Letter:       (["A"-"Z"]|["a"-"z"])>
+}
+
+TOKEN : /* IntLit */
+{
+  <IntLit: (<Digit>)+> 
+  { try { 
+      Integer.parseInt(matchedToken.image); 
+    } catch (Exception e) { 
+	throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+				", column " + matchedToken.beginColumn + 
+				". Integer overflow: " + matchedToken.image, 0);
+    } 
+  }
+}
+
+TOKEN : /* StrLit */
+{
+  <StrLit: ("\"" (~["\"","\n"])+ "\"")>
+  { if (matchedToken.image.length() > 257) 
+      throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+			      ", column " + matchedToken.beginColumn + 
+			      ". String length over 255: " + matchedToken.image, 0); 
+  }
+}
+
+TOKEN : /* Id */
+{
+  <Id: <Letter> (<Letter>|<Digit>|"_")*>
+  { if (matchedToken.image.length() > 255) 
+      throw new TokenMgrError("Lexical error at line " + matchedToken.beginLine + 
+			      ", column " + matchedToken.beginColumn + 
+			      ". Id length over 255: " + matchedToken.image, 0);
+  }
+}
+
+// Program -> {ClassDecl}
+//
+Ast.Program Program() :
+{ List<Ast.ClassDecl> cl = new ArrayList<Ast.ClassDecl>();
+  Ast.ClassDecl c; }
+{
+  ( c=ClassDecl() { cl.add(c); } )* <EOF>
+  { return new Ast.Program(cl); }
+}
+
+// ClassDecl -> "ClassDecl" <Id> [<Id>] {VarDecl} {MethodDecl}
+//
+Ast.ClassDecl ClassDecl() :
+{ List<Ast.VarDecl> vl = new ArrayList<Ast.VarDecl>(); 
+  List<Ast.MethodDecl> ml = new ArrayList<Ast.MethodDecl>();
+  String cn, pn=null; 
+  Ast.VarDecl v; 
+  Ast.MethodDecl m; }
+{
+  "ClassDecl" cn=Id() [ pn=Id() ]
+  ( v=VarDecl() { vl.add(v); } )*
+  ( m=MethodDecl() { ml.add(m); } )*
+  { return new Ast.ClassDecl(cn, pn, vl, ml); }
+}
+
+// VarDecl -> "VarDecl" Type <Id> Exp
+//
+Ast.VarDecl VarDecl() :
+{ String vn; 
+  Ast.Type t; 
+  Ast.Exp init; }
+{
+  "VarDecl" t=Type() vn=Id() init=Exp()
+  { return new Ast.VarDecl(t, vn, init); }
+}
+
+// MethodDecl -> "MethodDecl" Type <Id> "(" {Param} ")" {VarDecl} {Stmt}
+//
+Ast.MethodDecl MethodDecl() :
+{ List<Ast.Param> fl = new ArrayList<Ast.Param>();
+  List<Ast.VarDecl> vl = new ArrayList<Ast.VarDecl>(); 
+  List<Ast.Stmt> sl = new ArrayList<Ast.Stmt>(); 
+  String mn; 
+  Ast.Type t; 
+  Ast.Param f; 
+  Ast.VarDecl v; 
+  Ast.Stmt s; }
+{
+  "MethodDecl" t=Type() mn=Id() "(" ( f=Param() { fl.add(f); } )* ")"
+  ( v=VarDecl() { vl.add(v); } )* ( s=Stmt() { sl.add(s); } )*
+  { return new Ast.MethodDecl(t, mn, fl, vl, sl); }
+}
+
+// Param -> "(" Type <Id> ")"
+//
+Ast.Param Param() :
+{ String vn; Ast.Type t; }
+{
+  "(" "Param" t=Type() vn=Id() ")"
+  { return new Ast.Param(t, vn); }
+}
+
+// Type -> "void"
+//      |  "IntType" 
+//      |  "BoolType" 
+//      |  "(" "ObjType" <Id> ")"
+//      |  "(" "ArrayType" Type ")"
+//      
+//
+Ast.Type Type() :
+{ String cn; Ast.Type t; }
+{
+  ( "void"                        { t = null; }
+  | "IntType"                     { t = new Ast.IntType(); }
+  | "BoolType"                    { t = new Ast.BoolType(); } 
+  | "(" ( "ObjType" cn=Id()       { t = new Ast.ObjType(cn); }
+        | "ArrayType" t=Type()    { t = new Ast.ArrayType(t); } )
+    ")" )
+  { return t; }
+}
+
+// Stmt -> "{" {Stmt} "}"
+//      |  "Assign" Exp Exp
+//      |  "CallStmt" Exp <Id> "(" {Exp} ")"
+//      |  "If" Exp Stmt [ "Else" Stmt ]  
+//      |  "While" Exp Stmt
+//      |  "Print" Exp
+//      |  "Return" Exp
+//
+Ast.Stmt Stmt() :
+{ List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+  List<Ast.Stmt> sl = new ArrayList<Ast.Stmt>();
+  String mn; 
+  Ast.Exp arg, lhs, rhs, obj, cond, val; 
+  Ast.Stmt s, s1, s2=null; }
+{
+  ( "{" ( s=Stmt() { sl.add(s); } )* "}" { s = new Ast.Block(sl); }
+  | "Assign" lhs=Exp() rhs=Exp()  { s = new Ast.Assign(lhs, rhs); }
+  | "CallStmt" obj=Exp() mn=Id() "(" ( arg=Exp() { args.add(arg); } )* ")"
+                                  { s = new Ast.CallStmt(obj, mn, args); }
+  | "If" cond=Exp() s1=Stmt() [ LOOKAHEAD(2) "Else" s2=Stmt() ]  
+                                  { s = new Ast.If(cond, s1, s2); }
+  | "While" cond=Exp() s=Stmt()   { s = new Ast.While(cond, s); }
+  | "Print" arg=Exp()      	  { s = new Ast.Print(arg); }
+  | "Return" val=Exp()            { s = new Ast.Return(val); } )
+  { return s; }
+}
+
+Ast.BOP binOp() :
+{}
+{ 
+  ( "+"    { return Ast.BOP.ADD; }
+  | "-"    { return Ast.BOP.SUB; }
+  | "*"    { return Ast.BOP.MUL; }
+  | "/"    { return Ast.BOP.DIV; }
+  | "&&"   { return Ast.BOP.AND; }
+  | "||"   { return Ast.BOP.OR;  } 
+  | "=="   { return Ast.BOP.EQ; }
+  | "!="   { return Ast.BOP.NE; }
+  | "<"    { return Ast.BOP.LT; }
+  | "<="   { return Ast.BOP.LE; }
+  | ">"    { return Ast.BOP.GT; }
+  | ">="   { return Ast.BOP.GE; } 
+  )
+}
+
+Ast.UOP unOp() :
+{}
+{ 
+  ( "-"    { return Ast.UOP.NEG; }
+  | "!"    { return Ast.UOP.NOT; }
+  )
+}
+
+//  Exp -> "(" ")"
+//      |  "(" "Binop" BOP Exp Exp ")"
+//      |  "(" "Unop" UOP Exp ")"
+//      |  "(" "Call" Exp <Id> "(" {Exp} ")" ")"
+//      |  "(" "NewObj" <Id> "(" {Exp} ")" ")"
+//      |  "(" "NewArray" Type <IntLit> ")"
+//      |  "(" "Field" Exp <Id> ")"
+//      |  "(" "ArrayElm" Exp Exp ")"
+//      |  <Id> 
+//      | "This"
+//      | <IntLit>
+//      | <BoolLit>
+//      | <StrLit> 
+//
+Ast.Exp Exp() :
+{ List<Ast.Exp> args = new ArrayList<Ast.Exp>();
+  String cn, mn, vn, s; 
+  int sz, i; 
+  boolean b;
+  Ast.BOP bop; 
+  Ast.UOP uop; 
+  Ast.Type et; 
+  Ast.Exp e=null, e1, e2, arg, obj, ar, idx; }
+{
+  ( "("	
+    [ "Binop" bop=binOp() e1=Exp() e2=Exp() { e = new Ast.Binop(bop, e1, e2); }
+    | "Unop" uop=unOp() e=Exp()             { e = new Ast.Unop(uop, e); } 
+    | "Call" obj=Exp() mn=Id() "(" ( arg=Exp() { args.add(arg); } )* ")"
+    				            { e = new Ast.Call(obj, mn, args); }
+    | "NewObj" cn=Id() "(" ( arg=Exp() { args.add(arg); } )* ")"
+    				            { e = new Ast.NewObj(cn, args); }
+    | "NewArray" et=Type() sz=IntLit()      { e = new Ast.NewArray(et, sz); }
+    | "Field" obj=Exp() vn=Id()             { e = new Ast.Field(obj, vn); }
+    | "ArrayElm" ar=Exp() idx=Exp()         { e = new Ast.ArrayElm(ar, idx); } ]
+    ")"
+  | vn=Id()				    { e = new Ast.Id(vn); } 
+  | "This" 				    { e = new Ast.This(); }
+  | i=IntLit() 				    { e = new Ast.IntLit(i); }
+  | b=BoolLit() 		            { e = new Ast.BoolLit(b); }
+  | s=StrLit() 				    { e = new Ast.StrLit(s); }
+  )
+  { return e; }
+}
+
+String Id() :
+{ Token n; }
+{
+  n=<Id> { return n.image; }
+}
+
+int IntLit() :
+{ Token n; }
+{
+  n=<IntLit> { return Integer.parseInt(n.image); }
+}
+
+boolean BoolLit() :
+{ Token n; }
+{
+  n=<BoolLit> { return Boolean.parseBoolean(n.image); }
+}
+
+String StrLit() :
+{ Token n; }
+{
+  n=<StrLit> { return n.image.substring(1,n.image.length()-1); }
+}
