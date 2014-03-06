@@ -104,8 +104,16 @@ public class Ast {
       return str;
     }
     public void setReachability() {
-      for (Stmt s : stmts) 
-	s.setReachability();
+      boolean returnStmtFound = false;
+
+      for (Stmt stmt : stmts) {
+         if (returnStmtFound) {
+            stmt.setUnReachable();
+         }
+         if (stmt.willExecuteReturnStmt()) {
+            returnStmtFound = true;
+         }
+      }
     }
   }
 
@@ -170,6 +178,8 @@ public class Ast {
   public static abstract class Stmt extends Node {
     public boolean reachable = true; // inital flag value choice is arbitrary
     public abstract void setReachability();
+    public abstract void setUnReachable();
+    public abstract boolean willExecuteReturnStmt();
   }
 
   public static class Block extends Stmt {
@@ -196,6 +206,23 @@ public class Ast {
       for (Stmt s : stmts) 
 	s.setReachability();
     }
+
+    public void setUnReachable() {
+       reachable = false;
+       for (Stmt s : stmts) {
+          s.setUnReachable();
+       }
+    }
+
+    public boolean willExecuteReturnStmt() {
+       for (Stmt s : stmts) {
+          if (s.willExecuteReturnStmt()) {
+             return true;
+          }
+       }
+       return false;
+    }
+
   }
 
   public static class Assign extends Stmt {
@@ -209,6 +236,14 @@ public class Ast {
     }
     public void setReachability() {
       reachable = false;
+    }
+
+    public void setUnReachable() {
+       reachable = false;
+    }
+
+    public boolean willExecuteReturnStmt() {
+       return false;
     }
   }
 
@@ -232,6 +267,14 @@ public class Ast {
     }
     public void setReachability() {
       reachable = false;
+    }
+
+    public void setUnReachable() {
+       reachable = false;
+    }
+
+    public boolean willExecuteReturnStmt() {
+       return false;
     }
   }
 
@@ -261,6 +304,20 @@ public class Ast {
       if (s2 != null)
 	s2.setReachability();
     }
+
+    public void setUnReachable() {
+       reachable = false;
+       s1.setUnReachable();
+       if (s2 != null)
+          s2.setUnReachable();
+    }
+
+    public boolean willExecuteReturnStmt() {
+       if (s2 != null)
+          return (s1.willExecuteReturnStmt() && s2.willExecuteReturnStmt());
+       else
+          return s1.willExecuteReturnStmt();
+    }
   }
 
   public static class While extends Stmt {
@@ -280,6 +337,15 @@ public class Ast {
       reachable = false;
       s.setReachability();
     }
+
+    public void setUnReachable() {
+       reachable = false;
+       s.setUnReachable();
+    }
+
+    public boolean willExecuteReturnStmt() {
+       return false;
+    }
   }   
 
   public static class Print extends Stmt {
@@ -293,6 +359,14 @@ public class Ast {
     public void setReachability() {
       reachable = false;
     }
+
+    public void setUnReachable() {
+       reachable = false;
+    }
+
+    public boolean willExecuteReturnStmt() {
+       return false;
+    }
   }
 
   public static class Return extends Stmt {
@@ -305,6 +379,14 @@ public class Ast {
     }
     public void setReachability() {
       reachable = false;
+    }
+
+    public void setUnReachable() {
+       reachable = false;
+    }
+
+    public boolean willExecuteReturnStmt() {
+       return true;
     }
   }
 
