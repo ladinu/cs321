@@ -3,11 +3,12 @@ import ast2.*;
 
 class Test {
   public static void main(String [] args) {
-	Ast.Exp e = new Ast.IntLit(4);
-	System.out.println(e.cval());
+	Ast.Exp e1 = new Ast.IntLit(3);
+	Ast.Exp e2 = new Ast.Binop(Ast.BOP.ADD, new Ast.IntLit(2), 
+          new Ast.IntLit(2));
 
-	e = new Ast.BoolLit(false);
-    Ast.Unop u = new Ast.Unop(Ast.UOP.NEG, e);
+
+    Ast.Binop u = new Ast.Binop(Ast.BOP.LE, e1, e2);
 	System.out.println(u.cval());
   }
 }

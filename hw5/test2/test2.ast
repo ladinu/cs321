@@ -1,0 +1,9 @@
+# AST Program
+ ClassDecl Test 
+  MethodDecl void main ()
+  While true
+  {
+   Print "foo"
+  }
+  Print "bar"
+  Return 1

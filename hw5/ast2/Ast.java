@@ -104,14 +104,17 @@ public class Ast {
       return str;
     }
     public void setReachability() {
-      boolean returnStmtFound = false;
+      boolean unreachableStmtFound = false;
 
       for (Stmt stmt : stmts) {
-         if (returnStmtFound) {
+         if (unreachableStmtFound) {
             stmt.setUnReachable();
+            continue;
          }
-         if (stmt.willExecuteReturnStmt()) {
-            returnStmtFound = true;
+         
+         if (!stmt.isNextStmtReachable()) {
+            unreachableStmtFound = true;
+            continue;
          }
       }
     }
@@ -177,8 +180,9 @@ public class Ast {
 
   public static abstract class Stmt extends Node {
     public boolean reachable = true; // inital flag value choice is arbitrary
-    public abstract void setUnReachable();
-    public abstract boolean willExecuteReturnStmt();
+    public void setUnReachable() { reachable = false; }
+    public void setReachability() { return; }
+    public boolean isNextStmtReachable() { return true; }
   }
 
   public static class Block extends Stmt {
@@ -201,14 +205,19 @@ public class Ast {
       return s;
     }
     public void setReachability() {
-      boolean returnStmtFound = false;
+      boolean unreachableStmtFound = false;
 
       for (Stmt stmt : stmts) {
-         if (returnStmtFound) 
+
+         if (unreachableStmtFound) {
             stmt.setUnReachable();
-         
-         if (stmt.willExecuteReturnStmt()) 
-            returnStmtFound = true;
+            continue;
+         }
+
+         if (!stmt.isNextStmtReachable()) {
+            unreachableStmtFound = true;
+            continue;
+         }
       }
     }
 
@@ -219,13 +228,13 @@ public class Ast {
        }
     }
 
-    public boolean willExecuteReturnStmt() {
+    public boolean isNextStmtReachable() {
        setReachability();
        for (Stmt s : stmts) {
-          if (s.willExecuteReturnStmt())
-             return true;
+          if (!s.isNextStmtReachable())
+             return false;
        }
-       return false;
+       return true;
     }
 
   }
@@ -238,14 +247,6 @@ public class Ast {
 
     public String toString() { 
       return tab(!reachable) + "Assign " + lhs + " " + rhs + "\n"; 
-    }
-
-    public void setUnReachable() {
-       reachable = false;
-    }
-
-    public boolean willExecuteReturnStmt() {
-       return false;
     }
   }
 
@@ -266,14 +267,6 @@ public class Ast {
 	s += e + " "; 
       s += ")\n"; 
       return s;
-    }
-
-    public void setUnReachable() {
-       reachable = false;
-    }
-
-    public boolean willExecuteReturnStmt() {
-       return false;
     }
   }
 
@@ -298,18 +291,27 @@ public class Ast {
       return str;
     }
 
+    private boolean getCondCval() {
+       return (Boolean)cond.cval();
+    }
     public void setUnReachable() {
        reachable = false;
        s1.setUnReachable();
        if (s2 != null)
           s2.setUnReachable();
     }
+    public boolean isNextStmtReachable() {
+       s1.setReachability();
+       if (!getCondCval())
+          s1.setUnReachable();
 
-    public boolean willExecuteReturnStmt() {
-       if (s2 != null)
-          return (s1.willExecuteReturnStmt() && s2.willExecuteReturnStmt());
-       else
-          return s1.willExecuteReturnStmt();
+       if (s2 != null) {
+          s2.setReachability();
+          if (getCondCval())
+             s2.setUnReachable();
+          return s1.isNextStmtReachable() && s2.isNextStmtReachable();
+       }
+       return s1.isNextStmtReachable();
     }
   }
 
@@ -326,13 +328,23 @@ public class Ast {
       Ast.tab--;
       return str;
     }
+    private boolean getCondCval() {
+       return (Boolean)cond.cval();
+    }
+    private boolean willBodyLoopForEver() {
+       return getCondCval();
+    }
+    public void setReachability() {
+       if (!getCondCval())
+          s.setUnReachable();
+    }
     public void setUnReachable() {
        reachable = false;
        s.setUnReachable();
     }
-
-    public boolean willExecuteReturnStmt() {
-       return false;
+    public boolean isNextStmtReachable() {
+       setReachability();
+       return !willBodyLoopForEver();
     }
   }   
 
@@ -344,13 +356,6 @@ public class Ast {
     public String toString() { 
       return tab(!reachable) + "Print " + (arg==null ? "()" : arg) + "\n"; 
     }
-    public void setUnReachable() {
-       reachable = false;
-    }
-
-    public boolean willExecuteReturnStmt() {
-       return false;
-    }
   }
 
   public static class Return extends Stmt {
@@ -361,12 +366,8 @@ public class Ast {
     public String toString() { 
       return tab(!reachable) + "Return " + (val==null ? "()" : val) + "\n"; 
     }
-    public void setUnReachable() {
-       reachable = false;
-    }
-
-    public boolean willExecuteReturnStmt() {
-       return true;
+    public boolean isNextStmtReachable() {
+       return false;
     }
   }
 
@@ -374,7 +375,7 @@ public class Ast {
   // Expressions --------------------------------------------------------
 
   public static abstract class Exp extends Node {
-     public abstract Object cval();
+     public Object cval() {return null;}
   }
 
   public static enum BOP {
@@ -409,8 +410,8 @@ public class Ast {
             e1.cval() == null || e2.cval() == null ) 
           return null;
        switch (op) {
-          case EQ : return e1.equals(e2);
-          case NE : return !e1.equals(e2);
+          case EQ : return e1.cval().equals(e2.cval());
+          case NE : return !e1.cval().equals(e2.cval());
           case AND: return (Boolean)e1.cval() && (Boolean)e2.cval();
           case OR : return (Boolean)e1.cval() || (Boolean)e2.cval();
 
@@ -469,7 +470,6 @@ public class Ast {
       str += "))"; 
       return str; 
     }
-    public Object cval() { return null; }
   }
 
   public static class NewArray extends Exp {
@@ -481,7 +481,6 @@ public class Ast {
     public String toString() { 
       return "(NewArray " + et + " " + len + ")";
     }
-    public Object cval() { return null; }
   }
 
   public static class ArrayElm extends Exp {
@@ -493,7 +492,6 @@ public class Ast {
     public String toString() { 
       return "(ArrayElm " + ar + " " + idx +")";
     }
-    public Object cval() { return null; }
   }
 
   public static class NewObj extends Exp {
@@ -511,7 +509,6 @@ public class Ast {
       str += "))"; 
       return str;
     }
-    public Object cval() { return null; }
   }
 
   public static class Field extends Exp {
@@ -523,7 +520,6 @@ public class Ast {
     public String toString() { 
       return "(Field " + obj + " " +  nm + ") ";
     }
-    public Object cval() { return null; }
   }
 
   public static class Id extends Exp {
@@ -532,12 +528,10 @@ public class Ast {
     public Id(String s) { nm=s; }
       //    public String toString() { return "(Id " + nm + ")"; }
     public String toString() { return nm; }
-    public Object cval() { return null; }
   }
 
   public static class This extends Exp {
     public String toString() { return "This"; }
-    public Object cval() { return null; }
   }
 
   public static class IntLit extends Exp {
@@ -561,7 +555,6 @@ public class Ast {
 
     public StrLit(String as) { s=as; }
     public String toString() { return "\"" + s + "\""; }
-    public Object cval() { return null; }
   }
 
 }
