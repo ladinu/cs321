@@ -21,5 +21,10 @@ clean:
 	rm -f ast*/*.class *.class
 	rm -f test/pref.ref
 
-test:
-	./test.sh
+.PHONY: test1
+test1:
+	./test.sh test1
+
+.PHONY: test2
+test2:
+	./test.sh test2
