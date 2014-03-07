@@ -14,7 +14,7 @@ JCC = javacc
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
-all: AstParser.java TestReachability.class 
+all: AstParser.java TestReachability.class Test.class
 
 clean:	
 	rm -f AstParser*.java TokenMgrError.java Token.java ParseException.java SimpleCharStream.java

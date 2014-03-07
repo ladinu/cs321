@@ -370,9 +370,12 @@ public class Ast {
     }
   }
 
+
   // Expressions --------------------------------------------------------
 
-  public static abstract class Exp extends Node {}
+  public static abstract class Exp extends Node {
+     public abstract Object cval();
+  }
 
   public static enum BOP {
     ADD("+"), SUB("-"), MUL("*"), DIV("/"), AND("&&"), OR("||"),
@@ -401,6 +404,29 @@ public class Ast {
     public String toString() { 
       return "(Binop " + op + " " + e1 + " " + e2 + ")";
     }
+    public Object cval() {
+       if ( op == null || e1 == null || e2 == null || 
+            e1.cval() == null || e2.cval() == null ) 
+          return null;
+       switch (op) {
+          case EQ : return e1.equals(e2);
+          case NE : return !e1.equals(e2);
+          case AND: return (Boolean)e1.cval() && (Boolean)e2.cval();
+          case OR : return (Boolean)e1.cval() || (Boolean)e2.cval();
+
+          case LT: return (Integer)e1.cval() < (Integer)e2.cval();
+          case LE: return (Integer)e1.cval() <= (Integer)e2.cval();
+          case GT: return (Integer)e1.cval() > (Integer)e2.cval();
+          case GE: return (Integer)e1.cval() >= (Integer)e2.cval();
+
+          case ADD: return (Integer)e1.cval() + (Integer)e2.cval();
+          case SUB: return (Integer)e1.cval() - (Integer)e2.cval();
+          case MUL: return (Integer)e1.cval() * (Integer)e2.cval();
+          case DIV: return (Integer)e1.cval() / (Integer)e2.cval();
+
+          default: return null;
+       }
+    }
   }
 
   public static class Unop extends Exp {
@@ -411,6 +437,17 @@ public class Ast {
 
     public String toString() { 
       return "(Unop " + op + " " + e + ")";
+    }
+    public Object cval() {
+       if ( op == null || e == null || e.cval() == null) {
+          return null;
+       } else if (op == UOP.NEG && e.cval() instanceof Integer) {
+          return -1 * (Integer)e.cval();
+       } else if (op == UOP.NOT && e.cval() instanceof Boolean) {
+          return ! (Boolean)e.cval();
+       } else {
+          return null;
+       }
     }
   }
 
@@ -432,6 +469,7 @@ public class Ast {
       str += "))"; 
       return str; 
     }
+    public Object cval() { return null; }
   }
 
   public static class NewArray extends Exp {
@@ -443,6 +481,7 @@ public class Ast {
     public String toString() { 
       return "(NewArray " + et + " " + len + ")";
     }
+    public Object cval() { return null; }
   }
 
   public static class ArrayElm extends Exp {
@@ -454,6 +493,7 @@ public class Ast {
     public String toString() { 
       return "(ArrayElm " + ar + " " + idx +")";
     }
+    public Object cval() { return null; }
   }
 
   public static class NewObj extends Exp {
@@ -471,6 +511,7 @@ public class Ast {
       str += "))"; 
       return str;
     }
+    public Object cval() { return null; }
   }
 
   public static class Field extends Exp {
@@ -482,6 +523,7 @@ public class Ast {
     public String toString() { 
       return "(Field " + obj + " " +  nm + ") ";
     }
+    public Object cval() { return null; }
   }
 
   public static class Id extends Exp {
@@ -490,10 +532,12 @@ public class Ast {
     public Id(String s) { nm=s; }
       //    public String toString() { return "(Id " + nm + ")"; }
     public String toString() { return nm; }
+    public Object cval() { return null; }
   }
 
   public static class This extends Exp {
     public String toString() { return "This"; }
+    public Object cval() { return null; }
   }
 
   public static class IntLit extends Exp {
@@ -501,6 +545,7 @@ public class Ast {
     
     public IntLit(int ai) { i=ai; }
     public String toString() { return i + ""; }
+    public Object cval() { return new Integer(i); }
   }
 
   public static class BoolLit extends Exp {
@@ -508,6 +553,7 @@ public class Ast {
 
     public BoolLit(boolean ab) { b=ab; }
     public String toString() { return b + ""; }
+    public Object cval() { return new Boolean(b); }
   }
 
   public static class StrLit extends Exp {
@@ -515,6 +561,7 @@ public class Ast {
 
     public StrLit(String as) { s=as; }
     public String toString() { return "\"" + s + "\""; }
+    public Object cval() { return null; }
   }
 
 }
