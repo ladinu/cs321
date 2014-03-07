@@ -8,7 +8,7 @@
 
 PARSER_BEGIN(AstParser)
 import java.util.*;
-import ast1.*;
+import ast2.*;
 public class AstParser {
 }
 PARSER_END(AstParser)
