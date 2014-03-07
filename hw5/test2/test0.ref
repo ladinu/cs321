@@ -2,7 +2,13 @@
  ClassDecl Test 
   MethodDecl void main ()
   If true
-  {
-   Print "foo"
-  }
-! Print "bar"
+   {
+    Print "foo"
+   }
+! Else
+!  {
+!   Print "bar"
+!  }
+  Print "foo"
+  Return false
+! Print "baz"
