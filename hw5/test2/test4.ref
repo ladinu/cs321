@@ -1,9 +1,9 @@
 # AST Program
  ClassDecl Test 
   MethodDecl void main ()
-  While (Binop == 4 (Binop + 2 2))
-  {
-   Print "foo"
-  }
-! Print "bar"
-! Return 1
+   While (Binop == 4 (Binop + 2 2))
+    {
+     Print "foo"
+    }
+!  Print "bar"
+!  Return 1
